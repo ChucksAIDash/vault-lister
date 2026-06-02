@@ -318,45 +318,54 @@
       background: var(--surface);
       border: 2px dashed var(--border-mid);
       border-radius: var(--r-lg);
-      padding: 2rem 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: .75rem;
+      padding: 1.25rem;
       margin-bottom: 1.25rem;
       transition: all .2s;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
       position: relative;
     }
-    .photo-zone:active { background: var(--accent-bg); border-color: var(--accent); }
     .photo-zone.has-photos {
-      padding: 1.25rem;
       border-style: solid;
       border-color: var(--accent-bdr);
       background: var(--accent-bg);
-      cursor: default;
     }
-    .photo-zone-icon {
-      width: 56px; height: 56px;
+
+    /* Two-button photo picker row */
+    .photo-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+      margin-bottom: .75rem;
+    }
+    .photo-pick-btn {
       background: var(--surface2);
-      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: .9rem .5rem;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      font-size: 1.6rem;
+      gap: .4rem;
+      cursor: pointer;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .photo-zone-text {
+    .photo-pick-btn:active {
+      background: var(--accent-bg);
+      border-color: var(--accent);
+    }
+    .photo-pick-btn-icon { font-size: 1.5rem; line-height: 1; }
+    .photo-pick-btn-label {
       font-family: var(--ff-head);
-      font-size: 1rem;
+      font-size: .72rem;
       font-weight: 700;
-      color: var(--text);
-      text-align: center;
+      letter-spacing: .03em;
+      color: var(--text-mid);
     }
-    .photo-zone-sub {
-      font-size: .78rem;
-      color: var(--text-muted);
+    .photo-zone-empty-hint {
       text-align: center;
+      font-size: .75rem;
+      color: var(--text-muted);
+      padding-bottom: .25rem;
     }
     .photo-zone-limit {
       font-size: .72rem;
@@ -364,8 +373,10 @@
       background: var(--surface2);
       border-radius: 100px;
       padding: .2rem .7rem;
+      display: inline-block;
     }
     #photoInput { display: none; }
+    #cameraInput { display: none; }
 
     /* ── THUMBNAIL GRID ── */
     .thumb-grid {
@@ -730,6 +741,261 @@
     }
     .modal-actions { display: flex; flex-direction: column; gap: .6rem; }
 
+    /* ── PROCESSING SCREEN ── */
+    .processing-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 0;
+    }
+    .processing-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .processing-spinner {
+      width: 56px; height: 56px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .processing-title {
+      font-family: var(--ff-head);
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: .3rem;
+    }
+    .processing-sub {
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+    .progress-bar-wrap {
+      background: var(--border);
+      border-radius: 100px;
+      height: 6px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #60e8ff);
+      border-radius: 100px;
+      transition: width .5s ease;
+      width: 0%;
+    }
+    .processing-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      overflow-y: auto;
+      max-height: 55vh;
+    }
+    .processing-card-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .processing-card-item.done   { border-color: rgba(0,196,140,.3); background: rgba(0,196,140,.04); }
+    .processing-card-item.active { border-color: var(--accent-bdr); background: var(--accent-bg); }
+    .processing-card-item.error  { border-color: rgba(255,77,106,.3); background: var(--danger-bg); }
+    .proc-status-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
+    .proc-card-info { flex: 1; }
+    .proc-card-num {
+      font-family: var(--ff-head);
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: .1rem;
+    }
+    .proc-card-status {
+      font-size: .82rem;
+      color: var(--text-mid);
+    }
+
+    /* ── RESULTS SCREEN ── */
+    .results-header {
+      margin-bottom: 1.25rem;
+    }
+    .results-summary-bar {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .results-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .3rem .75rem;
+      border-radius: 100px;
+      font-size: .73rem;
+      font-weight: 600;
+      font-family: var(--ff-head);
+    }
+    .results-badge.success { background: rgba(0,196,140,.1); color: #00875f; border: 1px solid rgba(0,196,140,.3); }
+    .results-badge.warn    { background: var(--warn-bg); color: #b87a00; border: 1px solid rgba(255,179,64,.3); }
+    .results-badge.error   { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,77,106,.2); }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .result-card.flagged { border-color: var(--warn); }
+    .result-card.error   { border-color: rgba(255,77,106,.4); }
+
+    .result-card-header {
+      padding: .75rem 1rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+    }
+    .result-card-num {
+      font-family: var(--ff-head);
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .result-flag {
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .2rem .6rem;
+      border-radius: 100px;
+      font-family: var(--ff-head);
+      letter-spacing: .05em;
+    }
+    .result-flag.warn  { background: var(--warn-bg); color: #b87a00; }
+    .result-flag.error { background: var(--danger-bg); color: var(--danger); }
+    .result-flag.ok    { background: rgba(0,196,140,.1); color: #00875f; }
+
+    .result-card-thumb-row {
+      display: flex;
+      gap: 4px;
+      padding: .75rem 1rem .5rem;
+      overflow-x: auto;
+    }
+    .result-thumb {
+      width: 52px; height: 52px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+
+    .result-card-body { padding: .75rem 1rem 1rem; }
+    .result-field { margin-bottom: .75rem; }
+    .result-field:last-child { margin-bottom: 0; }
+    .result-field-label {
+      font-family: var(--ff-head);
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: .3rem;
+      display: block;
+    }
+    .result-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem .8rem;
+      font-family: var(--ff-body);
+      font-size: .88rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+    }
+    .result-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,.1);
+      background: var(--surface);
+    }
+    .result-fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6rem;
+      margin-bottom: .75rem;
+    }
+    .result-confidence {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .confidence-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .5s ease;
+    }
+    .confidence-fill.high   { background: var(--success); }
+    .confidence-fill.medium { background: var(--warn); }
+    .confidence-fill.low    { background: var(--danger); }
+    .confidence-label {
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .result-card-footer {
+      padding: .6rem 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+    }
+    .result-price-label {
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+    .result-price-input {
+      width: 100px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .45rem .7rem;
+      font-family: var(--ff-head);
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      text-align: right;
+      transition: border-color .2s;
+      -webkit-appearance: none;
+    }
+    .result-price-input:focus { border-color: var(--accent); }
+
+    .results-actions {
+      padding: 1rem 0 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -831,13 +1097,22 @@
       <div class="photo-count-dots" id="photoCountDots"></div>
     </div>
 
-    <div class="photo-zone" id="photoZone" onclick="triggerPhotoInput()">
-      <div class="photo-zone-icon">📷</div>
-      <div class="photo-zone-text">Add Photos</div>
-      <div class="photo-zone-sub">Tap to select from camera roll</div>
-      <div class="photo-zone-limit">Max 10 per card</div>
+    <div class="photo-zone" id="photoZone">
+      <!-- Buttons always visible when under limit -->
+      <div class="photo-btn-row" id="photoBtnRow">
+        <button class="photo-pick-btn" onclick="triggerCamera()">
+          <span class="photo-pick-btn-icon">📷</span>
+          <span class="photo-pick-btn-label">Take Photo</span>
+        </button>
+        <button class="photo-pick-btn" onclick="triggerPhotoInput()">
+          <span class="photo-pick-btn-icon">🖼</span>
+          <span class="photo-pick-btn-label">Photo Library</span>
+        </button>
+      </div>
+      <div class="photo-zone-empty-hint" id="photoZoneHint">Tap a button to add photos</div>
     </div>
-    <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotos(this)" />
+    <input type="file" id="photoInput"  accept="image/*" multiple onchange="handlePhotos(this)" />
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhotos(this)" />
 
     <!-- Quantity -->
     <div class="qty-row">
@@ -912,6 +1187,50 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════
+       SCREEN 4 — PROCESSING
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screenProcessing">
+    <div class="processing-inner">
+      <div class="processing-header">
+        <div class="processing-spinner" id="processingSpinner"></div>
+        <div class="processing-title" id="processingTitle">Analyzing Cards…</div>
+        <div class="processing-sub" id="processingSub">Sending to Claude Vision</div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+
+      <div class="processing-card-list" id="processingCardList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 5 — RESULTS REVIEW
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screenResults">
+    <div class="results-header">
+      <h2 class="screen-title">Review Results</h2>
+      <p class="screen-subtitle">Claude's identifications — edit anything before pushing to eBay.</p>
+      <div class="results-summary-bar" id="resultsSummaryBar"></div>
+    </div>
+
+    <div id="resultsCardList"></div>
+
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="pushToEbay()">
+        Push to eBay Drafts →
+      </button>
+      <button class="btn btn-secondary" onclick="reprocessFlagged()">
+        🔄 Re-analyze Flagged Cards
+      </button>
+      <button class="btn btn-secondary" onclick="newSession()">
+        + Start New Session
+      </button>
+    </div>
+  </div>
+
 </div><!-- /#app -->
 
 <!-- SESSION CONTROLS (sticky footer — only shown during card entry) -->
@@ -936,16 +1255,24 @@
 
 <script>
   /* ═══════════════════════════════════════
+     CONFIG — swap this URL in once your
+     Cloudflare Worker is deployed
+  ═══════════════════════════════════════ */
+  const WORKER_URL = 'https://vault-ai.YOUR-SUBDOMAIN.workers.dev';
+
+  /* ═══════════════════════════════════════
      STATE
   ═══════════════════════════════════════ */
   const state = {
     sessionName:   '',
     category:      '',
-    cards:         [],          // array of { category, photos:[], qty, notes }
-    currentPhotos: [],          // FileReader results for current card in progress
+    cards:         [],       // { category, photos[], qty, notes }
+    currentPhotos: [],       // base64 data URLs for card in progress
     currentQty:    1,
-    paused:        false,
+    results:       [],       // AI results per card
   };
+
+  const CAT_ICONS = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
 
   /* ═══════════════════════════════════════
      SESSION SCREEN
@@ -957,7 +1284,6 @@
     validateSessionStart();
   }
 
-  // Auto-fill session name with today's date + category
   document.getElementById('sessionName').addEventListener('input', validateSessionStart);
   document.getElementById('sessionName').addEventListener('focus', function () {
     if (!this.value && state.category) {
@@ -969,20 +1295,18 @@
 
   function validateSessionStart() {
     const hasName = document.getElementById('sessionName').value.trim().length > 0;
-    const hasCat  = state.category !== '';
-    document.getElementById('startBtn').disabled = !(hasName && hasCat);
+    document.getElementById('startBtn').disabled = !(hasName && state.category);
   }
 
   function startSession() {
-    state.sessionName = document.getElementById('sessionName').value.trim();
-    state.cards = [];
+    state.sessionName   = document.getElementById('sessionName').value.trim();
+    state.cards         = [];
     state.currentPhotos = [];
-    state.currentQty = 1;
+    state.currentQty    = 1;
+    state.results       = [];
 
-    // Update topbar
     document.getElementById('topbarSession').textContent = state.sessionName;
 
-    // Prep card screen
     resetCardForm();
     updateStats();
     updateCardLog();
@@ -995,19 +1319,21 @@
      PHOTO HANDLING
   ═══════════════════════════════════════ */
   function triggerPhotoInput() {
-    if (state.currentPhotos.length >= 10) {
-      showToast('Maximum 10 photos per card');
-      return;
-    }
+    if (state.currentPhotos.length >= 10) { showToast('Maximum 10 photos per card'); return; }
     document.getElementById('photoInput').click();
+  }
+
+  function triggerCamera() {
+    if (state.currentPhotos.length >= 10) { showToast('Maximum 10 photos per card'); return; }
+    document.getElementById('cameraInput').click();
   }
 
   function handlePhotos(input) {
     const files = Array.from(input.files);
     if (!files.length) return;
 
-    const remaining = 10 - state.currentPhotos.length;
-    const toProcess = files.slice(0, remaining);
+    const remaining  = 10 - state.currentPhotos.length;
+    const toProcess  = files.slice(0, remaining);
     if (files.length > remaining) {
       showToast(`Only ${remaining} slot${remaining !== 1 ? 's' : ''} left — added first ${remaining}`);
     }
@@ -1025,8 +1351,6 @@
       };
       reader.readAsDataURL(file);
     });
-
-    // Reset input so same files can be re-selected
     input.value = '';
   }
 
@@ -1037,15 +1361,14 @@
   }
 
   function renderPhotoZone() {
-    const zone = document.getElementById('photoZone');
-    const count = state.currentPhotos.length;
+    const zone      = document.getElementById('photoZone');
+    const count     = state.currentPhotos.length;
     const countText = document.getElementById('photoCountText');
-    const dots = document.getElementById('photoCountDots');
+    const dots      = document.getElementById('photoCountDots');
 
-    // Update count text
     countText.textContent = `${count} / 10 photos`;
 
-    // Update dots
+    // Dots
     dots.innerHTML = '';
     for (let i = 0; i < 10; i++) {
       const d = document.createElement('div');
@@ -1053,37 +1376,49 @@
       dots.appendChild(d);
     }
 
-    if (count === 0) {
-      zone.classList.remove('has-photos');
-      zone.innerHTML = `
-        <div class="photo-zone-icon">📷</div>
-        <div class="photo-zone-text">Add Photos</div>
-        <div class="photo-zone-sub">Tap to select from camera roll</div>
-        <div class="photo-zone-limit">Max 10 per card</div>
+    // Always show buttons row unless at max
+    const atMax = count >= 10;
+
+    // Rebuild zone interior
+    let html = '';
+
+    // Buttons row (hide if at max)
+    if (!atMax) {
+      html += `
+        <div class="photo-btn-row" id="photoBtnRow">
+          <button class="photo-pick-btn" onclick="triggerCamera()">
+            <span class="photo-pick-btn-icon">📷</span>
+            <span class="photo-pick-btn-label">Take Photo</span>
+          </button>
+          <button class="photo-pick-btn" onclick="triggerPhotoInput()">
+            <span class="photo-pick-btn-icon">🖼</span>
+            <span class="photo-pick-btn-label">Photo Library</span>
+          </button>
+        </div>
       `;
-      zone.onclick = triggerPhotoInput;
+    }
+
+    if (count === 0) {
+      html += `<div class="photo-zone-empty-hint">Tap a button to add photos</div>`;
+      zone.classList.remove('has-photos');
     } else {
       zone.classList.add('has-photos');
-      zone.onclick = null;
-
-      // Build thumbnail grid
-      let thumbsHTML = '<div class="thumb-grid">';
+      html += '<div class="thumb-grid">';
       state.currentPhotos.forEach((src, i) => {
-        thumbsHTML += `
+        html += `
           <div class="thumb-wrap">
             <img src="${src}" alt="Photo ${i+1}" />
-            <button class="thumb-remove" onclick="removePhoto(${i})" aria-label="Remove photo">✕</button>
+            <button class="thumb-remove" onclick="removePhoto(${i})" aria-label="Remove">✕</button>
           </div>
         `;
       });
-
-      // Add "add more" slot if under 10
-      if (count < 10) {
-        thumbsHTML += `<div class="thumb-add-more" onclick="triggerPhotoInput()">+</div>`;
+      if (atMax) {
+        html += `<div style="grid-column:1/-1;text-align:center;font-size:.75rem;color:var(--text-muted);padding:.25rem 0;">Max photos reached</div>`;
       }
-      thumbsHTML += '</div>';
-      zone.innerHTML = thumbsHTML;
+      html += '</div>';
     }
+
+    zone.innerHTML = html;
   }
 
   /* ═══════════════════════════════════════
@@ -1091,8 +1426,8 @@
   ═══════════════════════════════════════ */
   function changeQty(delta) {
     state.currentQty = Math.max(1, Math.min(99, state.currentQty + delta));
-    document.getElementById('qtyVal').textContent = state.currentQty;
-    document.getElementById('qtyMinus').disabled = state.currentQty <= 1;
+    document.getElementById('qtyVal').textContent   = state.currentQty;
+    document.getElementById('qtyMinus').disabled    = state.currentQty <= 1;
   }
 
   /* ═══════════════════════════════════════
@@ -1104,48 +1439,38 @@
 
   function saveCard() {
     if (state.currentPhotos.length === 0) return;
-
-    const card = {
+    state.cards.push({
       category: state.category,
       photos:   [...state.currentPhotos],
       qty:      state.currentQty,
       notes:    document.getElementById('cardNotes').value.trim(),
-    };
-    state.cards.push(card);
-
-    showToast(`Card #${state.cards.length} saved — ${card.photos.length} photo${card.photos.length !== 1 ? 's' : ''}`);
+    });
+    showToast(`Card #${state.cards.length} saved — ${state.cards[state.cards.length-1].photos.length} photo${state.cards[state.cards.length-1].photos.length !== 1 ? 's' : ''}`);
     resetCardForm();
     updateStats();
     updateCardLog();
-
-    // Scroll to top of card screen
-    document.getElementById('screenCard').scrollTop = 0;
+    window.scrollTo(0, 0);
   }
 
   function skipCard() {
-    if (state.currentPhotos.length > 0) {
-      openModal('skipconfirm');
-    } else {
-      showToast('Nothing to skip');
-    }
+    if (state.currentPhotos.length > 0) openModal('skipconfirm');
+    else showToast('Nothing to skip');
   }
 
   function resetCardForm() {
     state.currentPhotos = [];
-    state.currentQty = 1;
-    document.getElementById('cardNotes').value = '';
+    state.currentQty    = 1;
+    document.getElementById('cardNotes').value  = '';
     document.getElementById('qtyVal').textContent = '1';
-    document.getElementById('qtyMinus').disabled = true;
+    document.getElementById('qtyMinus').disabled  = true;
     renderPhotoZone();
     updateNextCardBtn();
 
-    const cardNum = state.cards.length + 1;
-    document.getElementById('cardTitle').textContent = `Card #${cardNum}`;
+    const num = state.cards.length + 1;
+    document.getElementById('cardTitle').textContent    = `Card #${num}`;
     document.getElementById('cardSubtitle').textContent = 'Add photos from your camera roll.';
 
-    // Update category badge
-    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
-    const icon = catIcons[state.category] || '📦';
+    const icon = CAT_ICONS[state.category] || '📦';
     document.getElementById('currentCatBadge').textContent = `${icon} ${state.category}`;
   }
 
@@ -1166,24 +1491,20 @@
       body.innerHTML = '<div class="card-log-empty">No cards yet — add your first one above.</div>';
       return;
     }
-
-    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
-    // Show latest 5, newest first
     const recent = [...state.cards].reverse().slice(0, 5);
     body.innerHTML = recent.map((c, i) => {
-      const num = state.cards.length - i;
-      const icon = catIcons[c.category] || '📦';
-      const notesSnip = c.notes ? ` · ${c.notes.substring(0, 30)}${c.notes.length > 30 ? '…' : ''}` : '';
+      const num       = state.cards.length - i;
+      const icon      = CAT_ICONS[c.category] || '📦';
+      const notesSnip = c.notes ? ` · ${c.notes.substring(0,30)}${c.notes.length>30?'…':''}` : '';
       return `
         <div class="card-log-item">
           <div class="card-log-num">#${num}</div>
           <div class="card-log-info">
             <div class="card-log-cat">${icon} ${c.category}</div>
-            <div class="card-log-photos">${c.photos.length} photo${c.photos.length !== 1 ? 's' : ''}${notesSnip}</div>
+            <div class="card-log-photos">${c.photos.length} photo${c.photos.length!==1?'s':''}${notesSnip}</div>
           </div>
           <div class="card-log-qty">×${c.qty}</div>
-        </div>
-      `;
+        </div>`;
     }).join('');
   }
 
@@ -1193,36 +1514,322 @@
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
   }
 
   function endSession() {
+    if (state.cards.length === 0) {
+      showToast('No cards logged yet');
+      return;
+    }
     const totalPhotos = state.cards.reduce((s, c) => s + c.photos.length, 0);
     const totalQty    = state.cards.reduce((s, c) => s + c.qty, 0);
-
     document.getElementById('doneCards').textContent  = state.cards.length;
     document.getElementById('donePhotos').textContent = totalPhotos;
     document.getElementById('doneQty').textContent    = totalQty;
     document.getElementById('doneCat').textContent    = state.category;
-
     showScreen('screenDone');
     document.getElementById('sessionControls').style.display = 'none';
   }
 
-  function processSession() {
-    showToast('AI processing coming in Phase 2 🚀');
+  /* ═══════════════════════════════════════
+     PHASE 2 — AI PROCESSING
+  ═══════════════════════════════════════ */
+  async function processSession() {
+    if (state.cards.length === 0) { showToast('No cards to process'); return; }
+
+    // Build processing list UI
+    const listEl = document.getElementById('processingCardList');
+    listEl.innerHTML = state.cards.map((c, i) => `
+      <div class="processing-card-item" id="proc-item-${i}">
+        <div class="proc-status-icon" id="proc-icon-${i}">⏳</div>
+        <div class="proc-card-info">
+          <div class="proc-card-num">Card #${i+1} · ${CAT_ICONS[c.category]||'📦'} ${c.category} · ${c.photos.length} photo${c.photos.length!==1?'s':''}</div>
+          <div class="proc-card-status" id="proc-status-${i}">Waiting…</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('processingTitle').textContent = 'Analyzing Cards…';
+    document.getElementById('processingSub').textContent   = `0 of ${state.cards.length} complete`;
+    document.getElementById('processingSpinner').style.display = 'block';
+
+    showScreen('screenProcessing');
+    document.getElementById('sessionControls').style.display = 'none';
+
+    state.results = [];
+    let completed = 0;
+
+    for (let i = 0; i < state.cards.length; i++) {
+      const card = state.cards[i];
+      setProcessingItemState(i, 'active', '🔍', 'Sending to Claude Vision…');
+
+      try {
+        const result = await analyzeCard(card, i);
+        state.results.push(result);
+        setProcessingItemState(i, 'done', '✅', result.name || 'Identified');
+      } catch (err) {
+        state.results.push({ error: err.message, cardIndex: i, ...card });
+        setProcessingItemState(i, 'error', '❌', `Error: ${err.message}`);
+      }
+
+      completed++;
+      const pct = Math.round((completed / state.cards.length) * 100);
+      document.getElementById('progressFill').style.width   = pct + '%';
+      document.getElementById('processingSub').textContent  = `${completed} of ${state.cards.length} complete`;
+    }
+
+    document.getElementById('processingTitle').textContent = 'Analysis Complete';
+    document.getElementById('processingSpinner').style.display = 'none';
+
+    // Short pause then show results
+    setTimeout(() => {
+      buildResultsScreen();
+      showScreen('screenResults');
+    }, 800);
+  }
+
+  function setProcessingItemState(i, cls, icon, status) {
+    const item = document.getElementById(`proc-item-${i}`);
+    if (!item) return;
+    item.className = `processing-card-item ${cls}`;
+    document.getElementById(`proc-icon-${i}`).textContent   = icon;
+    document.getElementById(`proc-status-${i}`).textContent = status;
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /* ─── Call Cloudflare Worker → Claude Vision ─── */
+  async function analyzeCard(card, index) {
+    // Build image content array for Claude
+    const imageContents = card.photos.map(dataUrl => {
+      const [meta, data] = dataUrl.split(',');
+      const mediaType    = meta.match(/:(.*?);/)[1];
+      return { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
+    });
+
+    const prompt = buildPrompt(card);
+
+    const response = await fetch(WORKER_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        cardIndex: index,
+        category:  card.category,
+        notes:     card.notes,
+        images:    imageContents,
+        prompt:    prompt,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Worker error ${response.status}: ${err.substring(0,80)}`);
+    }
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return { ...data, cardIndex: index, photos: card.photos, qty: card.qty };
+  }
+
+  function buildPrompt(card) {
+    return `You are an expert trading card identifier. Analyze the provided card photo(s) and return ONLY a JSON object with these exact fields:
+
+{
+  "name": "full card name",
+  "set": "set/series name",
+  "number": "card number e.g. 025/165",
+  "year": "year printed on card",
+  "variant": "e.g. Holo, Reverse Holo, Full Art, Rainbow Rare, or blank if standard",
+  "graded": true or false,
+  "grader": "PSA, BGS, CGC, or blank if raw",
+  "grade": "numeric grade e.g. 9.5, or blank if raw",
+  "condition": "for raw cards: Mint, Near Mint, Lightly Played, Moderately Played, Heavily Played",
+  "suggestedPrice": numeric dollar amount as a number (no $ sign) based on typical market value,
+  "confidence": "high", "medium", or "low",
+  "confidenceNote": "brief note if medium or low — what was unclear",
+  "category": "${card.category}"
+}
+
+${card.notes ? `Seller notes: ${card.notes}` : ''}
+
+Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
+  }
+
+  /* ─── Build Results Screen ─── */
+  function buildResultsScreen() {
+    const ok      = state.results.filter(r => !r.error && r.confidence === 'high').length;
+    const flagged = state.results.filter(r => !r.error && r.confidence !== 'high').length;
+    const errors  = state.results.filter(r => r.error).length;
+
+    // Summary badges
+    document.getElementById('resultsSummaryBar').innerHTML = `
+      ${ok      > 0 ? `<span class="results-badge success">✅ ${ok} identified</span>` : ''}
+      ${flagged > 0 ? `<span class="results-badge warn">⚠️ ${flagged} flagged</span>` : ''}
+      ${errors  > 0 ? `<span class="results-badge error">❌ ${errors} failed</span>` : ''}
+    `;
+
+    // Cards
+    document.getElementById('resultsCardList').innerHTML = state.results.map((r, i) =>
+      buildResultCard(r, i)
+    ).join('');
+  }
+
+  function buildResultCard(r, i) {
+    const cardNum = i + 1;
+
+    if (r.error) {
+      return `
+        <div class="result-card error" id="result-card-${i}">
+          <div class="result-card-header">
+            <span class="result-card-num">Card #${cardNum}</span>
+            <span class="result-flag error">❌ Failed</span>
+          </div>
+          <div class="result-card-body">
+            <p style="font-size:.85rem;color:var(--danger);">${r.error}</p>
+            <button class="btn btn-secondary" style="margin-top:.75rem;" onclick="reprocessCard(${i})">Retry Card #${cardNum}</button>
+          </div>
+        </div>`;
+    }
+
+    const flagClass = r.confidence === 'high' ? '' : r.confidence === 'medium' ? 'flagged' : 'flagged';
+    const flagLabel = r.confidence === 'high'
+      ? '<span class="result-flag ok">✅ High confidence</span>'
+      : r.confidence === 'medium'
+        ? '<span class="result-flag warn">⚠️ Review suggested</span>'
+        : '<span class="result-flag warn">⚠️ Low confidence</span>';
+
+    const confPct   = r.confidence === 'high' ? 95 : r.confidence === 'medium' ? 60 : 30;
+    const confClass = r.confidence === 'high' ? 'high' : r.confidence === 'medium' ? 'medium' : 'low';
+
+    const thumbs = (r.photos || []).slice(0, 4).map(src =>
+      `<img class="result-thumb" src="${src}" alt="card photo" />`
+    ).join('');
+
+    const gradeRow = r.graded
+      ? `<div class="result-field">
+           <span class="result-field-label">Grader &amp; Grade</span>
+           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;">
+             <input class="result-input" id="r${i}-grader" value="${esc(r.grader)}" placeholder="PSA / BGS / CGC" />
+             <input class="result-input" id="r${i}-grade"  value="${esc(r.grade)}"  placeholder="9.5" />
+           </div>
+         </div>`
+      : `<div class="result-field">
+           <span class="result-field-label">Condition</span>
+           <input class="result-input" id="r${i}-condition" value="${esc(r.condition)}" placeholder="Near Mint" />
+         </div>`;
+
+    return `
+      <div class="result-card ${flagClass}" id="result-card-${i}">
+        <div class="result-card-header">
+          <span class="result-card-num">Card #${cardNum} · ${CAT_ICONS[r.category]||'📦'} · ×${r.qty}</span>
+          ${flagLabel}
+        </div>
+        ${thumbs ? `<div class="result-card-thumb-row">${thumbs}</div>` : ''}
+        <div class="result-card-body">
+          <div class="result-confidence">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar"><div class="confidence-fill ${confClass}" style="width:${confPct}%"></div></div>
+            <span class="confidence-label">${confPct}%</span>
+          </div>
+          ${r.confidenceNote ? `<p style="font-size:.78rem;color:var(--warn);margin-bottom:.75rem;">⚠️ ${r.confidenceNote}</p>` : ''}
+          <div class="result-field">
+            <span class="result-field-label">Card Name</span>
+            <input class="result-input" id="r${i}-name" value="${esc(r.name)}" placeholder="Card name" />
+          </div>
+          <div class="result-fields-grid">
+            <div class="result-field">
+              <span class="result-field-label">Set</span>
+              <input class="result-input" id="r${i}-set" value="${esc(r.set)}" placeholder="Set name" />
+            </div>
+            <div class="result-field">
+              <span class="result-field-label">Number</span>
+              <input class="result-input" id="r${i}-number" value="${esc(r.number)}" placeholder="025/165" />
+            </div>
+          </div>
+          <div class="result-fields-grid">
+            <div class="result-field">
+              <span class="result-field-label">Year</span>
+              <input class="result-input" id="r${i}-year" value="${esc(r.year)}" placeholder="2024" />
+            </div>
+            <div class="result-field">
+              <span class="result-field-label">Variant</span>
+              <input class="result-input" id="r${i}-variant" value="${esc(r.variant)}" placeholder="Holo" />
+            </div>
+          </div>
+          ${gradeRow}
+        </div>
+        <div class="result-card-footer">
+          <span class="result-price-label">Suggested Price</span>
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            <span style="font-size:.85rem;color:var(--text-muted);">$</span>
+            <input class="result-price-input" id="r${i}-price" value="${r.suggestedPrice || ''}" placeholder="0.00" type="number" step="0.01" min="0" />
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* ─── Collect edited results ─── */
+  function collectResults() {
+    return state.results.map((r, i) => {
+      if (r.error) return r;
+      return {
+        ...r,
+        name:          document.getElementById(`r${i}-name`)?.value      || r.name,
+        set:           document.getElementById(`r${i}-set`)?.value       || r.set,
+        number:        document.getElementById(`r${i}-number`)?.value    || r.number,
+        year:          document.getElementById(`r${i}-year`)?.value      || r.year,
+        variant:       document.getElementById(`r${i}-variant`)?.value   || r.variant,
+        grader:        document.getElementById(`r${i}-grader`)?.value    || r.grader,
+        grade:         document.getElementById(`r${i}-grade`)?.value     || r.grade,
+        condition:     document.getElementById(`r${i}-condition`)?.value || r.condition,
+        suggestedPrice: parseFloat(document.getElementById(`r${i}-price`)?.value) || r.suggestedPrice,
+      };
+    });
+  }
+
+  async function reprocessCard(i) {
+    const card = state.cards[i];
+    showToast(`Re-analyzing Card #${i+1}…`);
+    try {
+      const result = await analyzeCard(card, i);
+      state.results[i] = { ...result, cardIndex: i, photos: card.photos, qty: card.qty };
+    } catch (err) {
+      state.results[i] = { error: err.message, cardIndex: i, ...card };
+    }
+    buildResultsScreen();
+  }
+
+  async function reprocessFlagged() {
+    const flagged = state.results
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => !r.error && r.confidence !== 'high');
+    if (flagged.length === 0) { showToast('No flagged cards to re-analyze'); return; }
+    showToast(`Re-analyzing ${flagged.length} flagged card${flagged.length!==1?'s':''}…`);
+    for (const { i } of flagged) await reprocessCard(i);
+  }
+
+  function pushToEbay() {
+    // Phase 4 — placeholder for now
+    const final = collectResults();
+    console.log('Final results ready for eBay:', final);
+    showToast('eBay integration coming in Phase 4 🚀');
   }
 
   function newSession() {
-    // Reset state
     state.sessionName = '';
-    state.category = '';
-    state.cards = [];
+    state.category    = '';
+    state.cards       = [];
     state.currentPhotos = [];
-    state.currentQty = 1;
+    state.currentQty  = 1;
+    state.results     = [];
 
-    // Reset session form
-    document.getElementById('sessionName').value = '';
-    document.getElementById('startBtn').disabled = true;
+    document.getElementById('sessionName').value    = '';
+    document.getElementById('startBtn').disabled    = true;
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('topbarSession').textContent = 'No active session';
 
@@ -1236,53 +1843,49 @@
   const modalConfigs = {
     pause: {
       title: '⏸ Pause Session',
-      body:  'Your session is saved in memory. Return to this tab to resume. Note: closing the tab will clear unsaved data.',
-      actions: [
-        { label: 'Resume', style: 'primary', fn: 'closeModal()' },
-      ],
+      body:  'Your session is saved in memory. Return to this tab to resume. Closing the tab will clear unsaved data.',
+      actions: [{ label:'Resume', style:'primary', fn:'closeModal()' }],
     },
     newcat: {
       title: '🔄 Switch Category',
-      body:  'Cards already logged keep their original category. New cards will use the category you pick next.',
+      body:  'Cards already logged keep their original category. New cards will use the one you pick.',
       actions: [
-        { label: 'Switch to Pokémon', style: 'secondary', fn: "switchCat('Pokémon')" },
-        { label: 'Switch to WWE',     style: 'secondary', fn: "switchCat('WWE')" },
-        { label: 'Switch to NFL',     style: 'secondary', fn: "switchCat('NFL')" },
-        { label: 'Switch to Other',   style: 'secondary', fn: "switchCat('Other')" },
-        { label: 'Cancel',            style: 'secondary', fn: 'closeModal()' },
+        { label:'Switch to Pokémon', style:'secondary', fn:"switchCat('Pokémon')" },
+        { label:'Switch to WWE',     style:'secondary', fn:"switchCat('WWE')" },
+        { label:'Switch to NFL',     style:'secondary', fn:"switchCat('NFL')" },
+        { label:'Switch to Other',   style:'secondary', fn:"switchCat('Other')" },
+        { label:'Cancel',            style:'secondary', fn:'closeModal()' },
       ],
     },
     done: {
       title: '✓ End Session?',
-      body:  'This will end the session and show your summary. Make sure you\'ve saved the current card first.',
+      body:  "This ends the session and shows your summary. Make sure you've saved the current card first.",
       actions: [
-        { label: 'End Session', style: 'danger',     fn: 'endSession(); closeModal();' },
-        { label: 'Keep Going',  style: 'secondary',  fn: 'closeModal()' },
+        { label:'End Session', style:'danger',    fn:'endSession(); closeModal();' },
+        { label:'Keep Going',  style:'secondary', fn:'closeModal()' },
       ],
     },
     skipconfirm: {
       title: 'Skip This Card?',
-      body:  'You have photos for this card that haven\'t been saved. Are you sure you want to skip it?',
+      body:  "You have unsaved photos. Are you sure you want to skip this card?",
       actions: [
-        { label: 'Yes, Skip',  style: 'danger',    fn: 'doSkip(); closeModal();' },
-        { label: 'Go Back',    style: 'secondary', fn: 'closeModal()' },
+        { label:'Yes, Skip', style:'danger',    fn:'doSkip(); closeModal();' },
+        { label:'Go Back',   style:'secondary', fn:'closeModal()' },
       ],
     },
   };
 
   function openModal(type) {
     const cfg = modalConfigs[type];
-    document.getElementById('modalTitle').textContent   = cfg.title;
-    document.getElementById('modalBody').textContent    = cfg.body;
-    document.getElementById('modalActions').innerHTML   = cfg.actions.map(a =>
+    document.getElementById('modalTitle').textContent = cfg.title;
+    document.getElementById('modalBody').textContent  = cfg.body;
+    document.getElementById('modalActions').innerHTML = cfg.actions.map(a =>
       `<button class="btn btn-${a.style}" onclick="${a.fn}">${a.label}</button>`
     ).join('');
     document.getElementById('modalOverlay').classList.add('open');
   }
 
-  function closeModal() {
-    document.getElementById('modalOverlay').classList.remove('open');
-  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
 
   function closeModalOutside(e) {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
@@ -1290,9 +1893,7 @@
 
   function switchCat(cat) {
     state.category = cat;
-    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
-    const icon = catIcons[cat] || '📦';
-    document.getElementById('currentCatBadge').textContent = `${icon} ${cat}`;
+    document.getElementById('currentCatBadge').textContent = `${CAT_ICONS[cat]||'📦'} ${cat}`;
     showToast(`Switched to ${cat}`);
     closeModal();
   }
@@ -1316,12 +1917,11 @@
   }
 
   /* ═══════════════════════════════════════
-     INIT — auto-suggest session name on load
+     INIT
   ═══════════════════════════════════════ */
   (function init() {
-    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    const today = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric' });
     document.getElementById('sessionName').placeholder = `e.g. ${today} – Pokémon Bulk`;
-    // Init dots
     renderPhotoZone();
   })();
 </script>
