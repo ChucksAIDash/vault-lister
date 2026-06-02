@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vault Listing Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --bg:         #f5f6f8;
+      --surface:    #ffffff;
+      --surface2:   #f0f2f5;
+      --border:     #e2e5ea;
+      --border-mid: #cdd1d8;
+      --accent:     #00d4ff;
+      --accent-dk:  #00aacf;
+      --accent-bg:  rgba(0,212,255,.08);
+      --accent-bdr: rgba(0,212,255,.3);
+      --text:       #12161c;
+      --text-mid:   #4a5160;
+      --text-muted: #8a92a0;
+      --danger:     #ff4d6a;
+      --danger-bg:  rgba(255,77,106,.08);
+      --success:    #00c48c;
+      --warn:       #ffb340;
+      --warn-bg:    rgba(255,179,64,.1);
+      --ff-head:    'Syne', sans-serif;
+      --ff-body:    'DM Sans', sans-serif;
+      --r:          12px;
+      --r-lg:       18px;
+      --r-xl:       24px;
+      --shadow-sm:  0 1px 4px rgba(0,0,0,.07);
+      --shadow:     0 4px 16px rgba(0,0,0,.09);
+      --shadow-lg:  0 12px 40px rgba(0,0,0,.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; -webkit-text-size-adjust: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--ff-body);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font-family: var(--ff-body); cursor: pointer; border: none; background: none; }
+    img { display: block; max-width: 100%; }
+
+    /* ── APP SHELL ── */
+    #app {
+      max-width: 540px;
+      margin: 0 auto;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+    .topbar-brand {
+      font-family: var(--ff-head);
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .topbar-brand-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .topbar-session {
+      font-size: .75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      padding: 1.5rem 1.25rem 2rem;
+      animation: screenIn .25s ease;
+    }
+    .screen.active { display: flex; }
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .screen-title {
+      font-family: var(--ff-head);
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -.025em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: .4rem;
+    }
+    .screen-subtitle {
+      font-size: .9rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-bottom: 1.75rem;
+    }
+    .label {
+      font-family: var(--ff-head);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: .6rem;
+      display: block;
+    }
+
+    /* ── CATEGORY GRID ── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-bottom: 1.75rem;
+    }
+    .cat-btn {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.3rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .55rem;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cat-btn:active { transform: scale(.97); }
+    .cat-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-bg);
+      box-shadow: 0 0 0 1px var(--accent-bdr);
+    }
+    .cat-icon {
+      font-size: 1.9rem;
+      line-height: 1;
+    }
+    .cat-label {
+      font-family: var(--ff-head);
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: var(--text-mid);
+    }
+    .cat-btn.selected .cat-label { color: var(--accent-dk); }
+
+    /* ── SESSION NAME INPUT ── */
+    .input-field {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: .85rem 1rem;
+      font-family: var(--ff-body);
+      font-size: 1rem;
+      color: var(--text);
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,.12);
+    }
+    .input-field::placeholder { color: var(--text-muted); }
+    .input-wrap { margin-bottom: 1.75rem; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      border-radius: var(--r);
+      font-family: var(--ff-head);
+      font-size: .92rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary {
+      background: var(--accent);
+      color: #0a1218;
+      box-shadow: 0 4px 20px rgba(0,212,255,.35);
+    }
+    .btn-primary:hover { background: #18dcff; box-shadow: 0 4px 24px rgba(0,212,255,.5); }
+    .btn-primary:disabled {
+      background: var(--border-mid);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text-mid);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-mid); background: var(--surface2); }
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1.5px solid rgba(255,77,106,.2);
+    }
+    .btn-danger:hover { background: rgba(255,77,106,.15); }
+    .btn-sm {
+      width: auto;
+      padding: .55rem 1rem;
+      font-size: .78rem;
+      border-radius: 8px;
+    }
+    .btn-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .btn-gap { margin-top: .75rem; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: .85rem 1.1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .15rem;
+    }
+    .stat-item + .stat-item {
+      border-left: 1px solid var(--border);
+    }
+    .stat-num {
+      font-family: var(--ff-head);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: .68rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: .03em;
+    }
+
+    /* ── CATEGORY BADGE ── */
+    .cat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-bdr);
+      border-radius: 100px;
+      padding: .3rem .8rem;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--accent-dk);
+      font-family: var(--ff-head);
+      letter-spacing: .04em;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── ADD PHOTOS ZONE ── */
+    .photo-zone {
+      background: var(--surface);
+      border: 2px dashed var(--border-mid);
+      border-radius: var(--r-lg);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1.25rem;
+      transition: all .2s;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .photo-zone:active { background: var(--accent-bg); border-color: var(--accent); }
+    .photo-zone.has-photos {
+      padding: 1.25rem;
+      border-style: solid;
+      border-color: var(--accent-bdr);
+      background: var(--accent-bg);
+      cursor: default;
+    }
+    .photo-zone-icon {
+      width: 56px; height: 56px;
+      background: var(--surface2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+    .photo-zone-text {
+      font-family: var(--ff-head);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+    }
+    .photo-zone-sub {
+      font-size: .78rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .photo-zone-limit {
+      font-size: .72rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border-radius: 100px;
+      padding: .2rem .7rem;
+    }
+    #photoInput { display: none; }
+
+    /* ── THUMBNAIL GRID ── */
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .5rem;
+      width: 100%;
+    }
+    .thumb-wrap {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface2);
+    }
+    .thumb-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .thumb-remove {
+      position: absolute;
+      top: 3px; right: 3px;
+      width: 22px; height: 22px;
+      background: rgba(0,0,0,.65);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .65rem;
+      color: #fff;
+      cursor: pointer;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      transition: background .15s;
+    }
+    .thumb-remove:active { background: var(--danger); }
+
+    .thumb-add-more {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1.5px dashed var(--border-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all .2s;
+    }
+    .thumb-add-more:active { background: var(--accent-bg); border-color: var(--accent); }
+
+    /* ── PHOTO COUNT INDICATOR ── */
+    .photo-count-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .5rem;
+    }
+    .photo-count-text {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-mid);
+    }
+    .photo-count-dots {
+      display: flex;
+      gap: 3px;
+    }
+    .photo-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background .2s;
+    }
+    .photo-dot.filled { background: var(--accent); }
+
+    /* ── QUANTITY ROW ── */
+    .qty-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: .85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .qty-label {
+      font-size: .88rem;
+      font-weight: 500;
+      color: var(--text-mid);
+    }
+    .qty-controls {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .qty-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-size: 1.1rem;
+      color: var(--text-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .qty-btn:active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent-dk); }
+    .qty-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .qty-val {
+      font-family: var(--ff-head);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text);
+      min-width: 28px;
+      text-align: center;
+    }
+
+    /* ── NOTES FIELD ── */
+    .notes-wrap { margin-bottom: 1.5rem; }
+    .notes-field {
+      width: 100%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: .75rem 1rem;
+      font-family: var(--ff-body);
+      font-size: .9rem;
+      color: var(--text);
+      resize: none;
+      height: 72px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      -webkit-appearance: none;
+    }
+    .notes-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,212,255,.12);
+    }
+    .notes-field::placeholder { color: var(--text-muted); }
+
+    /* ── ACTION ROWS ── */
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-bottom: .75rem;
+    }
+    .action-row.single { grid-template-columns: 1fr; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* ── SESSION CONTROLS (bottom strip) ── */
+    .session-controls {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: .85rem 1.25rem;
+      display: flex;
+      gap: .6rem;
+      position: sticky;
+      bottom: 0;
+      z-index: 40;
+      box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+    }
+    .session-controls .btn { width: auto; flex: 1; padding: .7rem .5rem; font-size: .78rem; }
+
+    /* ── CARD LOG (mini summary below stats) ── */
+    .card-log {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-log-header {
+      padding: .65rem 1rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--ff-head);
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .card-log-empty {
+      padding: 1.1rem 1rem;
+      font-size: .83rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .card-log-item {
+      padding: .7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+    }
+    .card-log-item:last-child { border-bottom: none; }
+    .card-log-num {
+      font-family: var(--ff-head);
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 24px;
+    }
+    .card-log-info { flex: 1; }
+    .card-log-cat {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--accent-dk);
+      margin-bottom: .1rem;
+    }
+    .card-log-photos {
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+    .card-log-qty {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border-radius: 100px;
+      padding: .2rem .55rem;
+      white-space: nowrap;
+    }
+
+    /* ── DONE SCREEN ── */
+    .done-screen-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 1rem;
+      padding: 2rem 0;
+    }
+    .done-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--accent-bg), rgba(0,212,255,.15));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      box-shadow: 0 0 40px rgba(0,212,255,.2);
+    }
+    .done-title {
+      font-family: var(--ff-head);
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -.025em;
+    }
+    .done-sub {
+      font-size: .92rem;
+      color: var(--text-muted);
+      max-width: 300px;
+    }
+    .done-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.5rem;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: .5rem 0;
+    }
+    .done-stat { text-align: center; }
+    .done-stat-num {
+      font-family: var(--ff-head);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .done-stat-lbl {
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: #fff;
+      padding: .65rem 1.2rem;
+      border-radius: 100px;
+      font-size: .82rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: all .3s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 200;
+      max-width: 90vw;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── MODAL (pause/confirm) ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--r-xl) var(--r-xl) 0 0;
+      padding: 1.75rem 1.5rem 2.5rem;
+      width: 100%;
+      max-width: 540px;
+      animation: slideUp .3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .modal-handle {
+      width: 40px; height: 4px;
+      background: var(--border-mid);
+      border-radius: 2px;
+      margin: 0 auto 1.5rem;
+    }
+    .modal-title {
+      font-family: var(--ff-head);
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: .5rem;
+    }
+    .modal-body {
+      font-size: .9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    .modal-actions { display: flex; flex-direction: column; gap: .6rem; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-brand-dot"></div>
+      Vault Lister
+    </div>
+    <div class="topbar-session" id="topbarSession">No active session</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 1 — SESSION SETUP
+  ═══════════════════════════════════════ -->
+  <div class="screen active" id="screenSession">
+
+    <h1 class="screen-title">New Session</h1>
+    <p class="screen-subtitle">Choose a category and name your session to begin.</p>
+
+    <span class="label">Category</span>
+    <div class="cat-grid">
+      <button class="cat-btn" data-cat="Pokémon" onclick="selectCat(this)">
+        <span class="cat-icon">🎴</span>
+        <span class="cat-label">Pokémon</span>
+      </button>
+      <button class="cat-btn" data-cat="WWE" onclick="selectCat(this)">
+        <span class="cat-icon">🏆</span>
+        <span class="cat-label">WWE</span>
+      </button>
+      <button class="cat-btn" data-cat="NFL" onclick="selectCat(this)">
+        <span class="cat-icon">🏈</span>
+        <span class="cat-label">NFL</span>
+      </button>
+      <button class="cat-btn" data-cat="Other" onclick="selectCat(this)">
+        <span class="cat-icon">📦</span>
+        <span class="cat-label">Other</span>
+      </button>
+    </div>
+
+    <span class="label">Session Name</span>
+    <div class="input-wrap">
+      <input
+        type="text"
+        class="input-field"
+        id="sessionName"
+        placeholder="e.g. June 1 – Pokémon Bulk"
+        maxlength="60"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" onclick="startSession()" disabled>
+      Start Session →
+    </button>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 2 — CARD ENTRY
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screenCard">
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-num" id="statCards">0</div>
+        <div class="stat-lbl">Cards</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="statPhotos">0</div>
+        <div class="stat-lbl">Photos</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="statQty">0</div>
+        <div class="stat-lbl">Total Qty</div>
+      </div>
+    </div>
+
+    <!-- Current category badge -->
+    <div class="cat-badge" id="currentCatBadge">🎴 Pokémon</div>
+
+    <!-- Current card title -->
+    <h2 class="screen-title" id="cardTitle">Card #1</h2>
+    <p class="screen-subtitle" id="cardSubtitle">Add photos from your camera roll.</p>
+
+    <!-- Photo zone -->
+    <div class="photo-count-row">
+      <span class="photo-count-text" id="photoCountText">0 / 10 photos</span>
+      <div class="photo-count-dots" id="photoCountDots"></div>
+    </div>
+
+    <div class="photo-zone" id="photoZone" onclick="triggerPhotoInput()">
+      <div class="photo-zone-icon">📷</div>
+      <div class="photo-zone-text">Add Photos</div>
+      <div class="photo-zone-sub">Tap to select from camera roll</div>
+      <div class="photo-zone-limit">Max 10 per card</div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" multiple capture="environment" onchange="handlePhotos(this)" />
+
+    <!-- Quantity -->
+    <div class="qty-row">
+      <span class="qty-label">Quantity (same card copies)</span>
+      <div class="qty-controls">
+        <button class="qty-btn" id="qtyMinus" onclick="changeQty(-1)" disabled>−</button>
+        <span class="qty-val" id="qtyVal">1</span>
+        <button class="qty-btn" id="qtyPlus" onclick="changeQty(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="notes-wrap">
+      <span class="label">Notes (optional)</span>
+      <textarea class="notes-field" id="cardNotes" placeholder="e.g. Holo, slight edge wear, graded PSA 9…"></textarea>
+    </div>
+
+    <!-- Card actions -->
+    <div class="action-row">
+      <button class="btn btn-secondary" onclick="skipCard()">Skip Card</button>
+      <button class="btn btn-primary" id="nextCardBtn" onclick="saveCard()" disabled>Next Card →</button>
+    </div>
+
+    <!-- Card log -->
+    <div class="divider"></div>
+    <div class="card-log">
+      <div class="card-log-header">Session Cards</div>
+      <div id="cardLogBody">
+        <div class="card-log-empty">No cards yet — add your first one above.</div>
+      </div>
+    </div>
+
+    <!-- Spacer for sticky footer -->
+    <div style="height: 1rem;"></div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 3 — DONE / REVIEW
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screenDone">
+    <div class="done-screen-inner">
+      <div class="done-icon">✅</div>
+      <h2 class="done-title">Session Complete</h2>
+      <p class="done-sub">All cards have been logged. Ready for AI processing in Phase 2.</p>
+
+      <div class="done-summary">
+        <div class="done-stat">
+          <div class="done-stat-num" id="doneCards">0</div>
+          <div class="done-stat-lbl">Cards Logged</div>
+        </div>
+        <div class="done-stat">
+          <div class="done-stat-num" id="donePhotos">0</div>
+          <div class="done-stat-lbl">Total Photos</div>
+        </div>
+        <div class="done-stat">
+          <div class="done-stat-num" id="doneQty">0</div>
+          <div class="done-stat-lbl">Total Quantity</div>
+        </div>
+        <div class="done-stat">
+          <div class="done-stat-num" id="doneCat">—</div>
+          <div class="done-stat-lbl">Category</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="processSession()" style="width:100%">
+        🚀 Process with AI
+      </button>
+      <button class="btn btn-secondary btn-gap" onclick="newSession()" style="width:100%">
+        + Start New Session
+      </button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- SESSION CONTROLS (sticky footer — only shown during card entry) -->
+<div class="session-controls" id="sessionControls" style="display:none;">
+  <button class="btn btn-secondary" onclick="openModal('pause')">⏸ Pause</button>
+  <button class="btn btn-secondary" onclick="openModal('newcat')">🔄 New Category</button>
+  <button class="btn btn-danger" onclick="openModal('done')">✓ Done</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL OVERLAY -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Pause Session</div>
+    <div class="modal-body" id="modalBody">Your progress is saved. You can resume at any time.</div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════
+     STATE
+  ═══════════════════════════════════════ */
+  const state = {
+    sessionName:   '',
+    category:      '',
+    cards:         [],          // array of { category, photos:[], qty, notes }
+    currentPhotos: [],          // FileReader results for current card in progress
+    currentQty:    1,
+    paused:        false,
+  };
+
+  /* ═══════════════════════════════════════
+     SESSION SCREEN
+  ═══════════════════════════════════════ */
+  function selectCat(btn) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.category = btn.dataset.cat;
+    validateSessionStart();
+  }
+
+  // Auto-fill session name with today's date + category
+  document.getElementById('sessionName').addEventListener('input', validateSessionStart);
+  document.getElementById('sessionName').addEventListener('focus', function () {
+    if (!this.value && state.category) {
+      const today = new Date().toLocaleDateString('en-US', { month:'long', day:'numeric' });
+      this.value = `${today} – ${state.category}`;
+      validateSessionStart();
+    }
+  });
+
+  function validateSessionStart() {
+    const hasName = document.getElementById('sessionName').value.trim().length > 0;
+    const hasCat  = state.category !== '';
+    document.getElementById('startBtn').disabled = !(hasName && hasCat);
+  }
+
+  function startSession() {
+    state.sessionName = document.getElementById('sessionName').value.trim();
+    state.cards = [];
+    state.currentPhotos = [];
+    state.currentQty = 1;
+
+    // Update topbar
+    document.getElementById('topbarSession').textContent = state.sessionName;
+
+    // Prep card screen
+    resetCardForm();
+    updateStats();
+    updateCardLog();
+
+    showScreen('screenCard');
+    document.getElementById('sessionControls').style.display = 'flex';
+  }
+
+  /* ═══════════════════════════════════════
+     PHOTO HANDLING
+  ═══════════════════════════════════════ */
+  function triggerPhotoInput() {
+    if (state.currentPhotos.length >= 10) {
+      showToast('Maximum 10 photos per card');
+      return;
+    }
+    document.getElementById('photoInput').click();
+  }
+
+  function handlePhotos(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
+
+    const remaining = 10 - state.currentPhotos.length;
+    const toProcess = files.slice(0, remaining);
+    if (files.length > remaining) {
+      showToast(`Only ${remaining} slot${remaining !== 1 ? 's' : ''} left — added first ${remaining}`);
+    }
+
+    let loaded = 0;
+    toProcess.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        state.currentPhotos.push(e.target.result);
+        loaded++;
+        if (loaded === toProcess.length) {
+          renderPhotoZone();
+          updateNextCardBtn();
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input so same files can be re-selected
+    input.value = '';
+  }
+
+  function removePhoto(index) {
+    state.currentPhotos.splice(index, 1);
+    renderPhotoZone();
+    updateNextCardBtn();
+  }
+
+  function renderPhotoZone() {
+    const zone = document.getElementById('photoZone');
+    const count = state.currentPhotos.length;
+    const countText = document.getElementById('photoCountText');
+    const dots = document.getElementById('photoCountDots');
+
+    // Update count text
+    countText.textContent = `${count} / 10 photos`;
+
+    // Update dots
+    dots.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const d = document.createElement('div');
+      d.className = 'photo-dot' + (i < count ? ' filled' : '');
+      dots.appendChild(d);
+    }
+
+    if (count === 0) {
+      zone.classList.remove('has-photos');
+      zone.innerHTML = `
+        <div class="photo-zone-icon">📷</div>
+        <div class="photo-zone-text">Add Photos</div>
+        <div class="photo-zone-sub">Tap to select from camera roll</div>
+        <div class="photo-zone-limit">Max 10 per card</div>
+      `;
+      zone.onclick = triggerPhotoInput;
+    } else {
+      zone.classList.add('has-photos');
+      zone.onclick = null;
+
+      // Build thumbnail grid
+      let thumbsHTML = '<div class="thumb-grid">';
+      state.currentPhotos.forEach((src, i) => {
+        thumbsHTML += `
+          <div class="thumb-wrap">
+            <img src="${src}" alt="Photo ${i+1}" />
+            <button class="thumb-remove" onclick="removePhoto(${i})" aria-label="Remove photo">✕</button>
+          </div>
+        `;
+      });
+
+      // Add "add more" slot if under 10
+      if (count < 10) {
+        thumbsHTML += `<div class="thumb-add-more" onclick="triggerPhotoInput()">+</div>`;
+      }
+      thumbsHTML += '</div>';
+      zone.innerHTML = thumbsHTML;
+    }
+  }
+
+  /* ═══════════════════════════════════════
+     QUANTITY
+  ═══════════════════════════════════════ */
+  function changeQty(delta) {
+    state.currentQty = Math.max(1, Math.min(99, state.currentQty + delta));
+    document.getElementById('qtyVal').textContent = state.currentQty;
+    document.getElementById('qtyMinus').disabled = state.currentQty <= 1;
+  }
+
+  /* ═══════════════════════════════════════
+     CARD ACTIONS
+  ═══════════════════════════════════════ */
+  function updateNextCardBtn() {
+    document.getElementById('nextCardBtn').disabled = state.currentPhotos.length === 0;
+  }
+
+  function saveCard() {
+    if (state.currentPhotos.length === 0) return;
+
+    const card = {
+      category: state.category,
+      photos:   [...state.currentPhotos],
+      qty:      state.currentQty,
+      notes:    document.getElementById('cardNotes').value.trim(),
+    };
+    state.cards.push(card);
+
+    showToast(`Card #${state.cards.length} saved — ${card.photos.length} photo${card.photos.length !== 1 ? 's' : ''}`);
+    resetCardForm();
+    updateStats();
+    updateCardLog();
+
+    // Scroll to top of card screen
+    document.getElementById('screenCard').scrollTop = 0;
+  }
+
+  function skipCard() {
+    if (state.currentPhotos.length > 0) {
+      openModal('skipconfirm');
+    } else {
+      showToast('Nothing to skip');
+    }
+  }
+
+  function resetCardForm() {
+    state.currentPhotos = [];
+    state.currentQty = 1;
+    document.getElementById('cardNotes').value = '';
+    document.getElementById('qtyVal').textContent = '1';
+    document.getElementById('qtyMinus').disabled = true;
+    renderPhotoZone();
+    updateNextCardBtn();
+
+    const cardNum = state.cards.length + 1;
+    document.getElementById('cardTitle').textContent = `Card #${cardNum}`;
+    document.getElementById('cardSubtitle').textContent = 'Add photos from your camera roll.';
+
+    // Update category badge
+    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
+    const icon = catIcons[state.category] || '📦';
+    document.getElementById('currentCatBadge').textContent = `${icon} ${state.category}`;
+  }
+
+  /* ═══════════════════════════════════════
+     STATS + LOG
+  ═══════════════════════════════════════ */
+  function updateStats() {
+    const totalPhotos = state.cards.reduce((s, c) => s + c.photos.length, 0);
+    const totalQty    = state.cards.reduce((s, c) => s + c.qty, 0);
+    document.getElementById('statCards').textContent  = state.cards.length;
+    document.getElementById('statPhotos').textContent = totalPhotos;
+    document.getElementById('statQty').textContent    = totalQty;
+  }
+
+  function updateCardLog() {
+    const body = document.getElementById('cardLogBody');
+    if (state.cards.length === 0) {
+      body.innerHTML = '<div class="card-log-empty">No cards yet — add your first one above.</div>';
+      return;
+    }
+
+    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
+    // Show latest 5, newest first
+    const recent = [...state.cards].reverse().slice(0, 5);
+    body.innerHTML = recent.map((c, i) => {
+      const num = state.cards.length - i;
+      const icon = catIcons[c.category] || '📦';
+      const notesSnip = c.notes ? ` · ${c.notes.substring(0, 30)}${c.notes.length > 30 ? '…' : ''}` : '';
+      return `
+        <div class="card-log-item">
+          <div class="card-log-num">#${num}</div>
+          <div class="card-log-info">
+            <div class="card-log-cat">${icon} ${c.category}</div>
+            <div class="card-log-photos">${c.photos.length} photo${c.photos.length !== 1 ? 's' : ''}${notesSnip}</div>
+          </div>
+          <div class="card-log-qty">×${c.qty}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ═══════════════════════════════════════
+     SCREEN TRANSITIONS
+  ═══════════════════════════════════════ */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function endSession() {
+    const totalPhotos = state.cards.reduce((s, c) => s + c.photos.length, 0);
+    const totalQty    = state.cards.reduce((s, c) => s + c.qty, 0);
+
+    document.getElementById('doneCards').textContent  = state.cards.length;
+    document.getElementById('donePhotos').textContent = totalPhotos;
+    document.getElementById('doneQty').textContent    = totalQty;
+    document.getElementById('doneCat').textContent    = state.category;
+
+    showScreen('screenDone');
+    document.getElementById('sessionControls').style.display = 'none';
+  }
+
+  function processSession() {
+    showToast('AI processing coming in Phase 2 🚀');
+  }
+
+  function newSession() {
+    // Reset state
+    state.sessionName = '';
+    state.category = '';
+    state.cards = [];
+    state.currentPhotos = [];
+    state.currentQty = 1;
+
+    // Reset session form
+    document.getElementById('sessionName').value = '';
+    document.getElementById('startBtn').disabled = true;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('topbarSession').textContent = 'No active session';
+
+    showScreen('screenSession');
+    document.getElementById('sessionControls').style.display = 'none';
+  }
+
+  /* ═══════════════════════════════════════
+     MODALS
+  ═══════════════════════════════════════ */
+  const modalConfigs = {
+    pause: {
+      title: '⏸ Pause Session',
+      body:  'Your session is saved in memory. Return to this tab to resume. Note: closing the tab will clear unsaved data.',
+      actions: [
+        { label: 'Resume', style: 'primary', fn: 'closeModal()' },
+      ],
+    },
+    newcat: {
+      title: '🔄 Switch Category',
+      body:  'Cards already logged keep their original category. New cards will use the category you pick next.',
+      actions: [
+        { label: 'Switch to Pokémon', style: 'secondary', fn: "switchCat('Pokémon')" },
+        { label: 'Switch to WWE',     style: 'secondary', fn: "switchCat('WWE')" },
+        { label: 'Switch to NFL',     style: 'secondary', fn: "switchCat('NFL')" },
+        { label: 'Switch to Other',   style: 'secondary', fn: "switchCat('Other')" },
+        { label: 'Cancel',            style: 'secondary', fn: 'closeModal()' },
+      ],
+    },
+    done: {
+      title: '✓ End Session?',
+      body:  'This will end the session and show your summary. Make sure you\'ve saved the current card first.',
+      actions: [
+        { label: 'End Session', style: 'danger',     fn: 'endSession(); closeModal();' },
+        { label: 'Keep Going',  style: 'secondary',  fn: 'closeModal()' },
+      ],
+    },
+    skipconfirm: {
+      title: 'Skip This Card?',
+      body:  'You have photos for this card that haven\'t been saved. Are you sure you want to skip it?',
+      actions: [
+        { label: 'Yes, Skip',  style: 'danger',    fn: 'doSkip(); closeModal();' },
+        { label: 'Go Back',    style: 'secondary', fn: 'closeModal()' },
+      ],
+    },
+  };
+
+  function openModal(type) {
+    const cfg = modalConfigs[type];
+    document.getElementById('modalTitle').textContent   = cfg.title;
+    document.getElementById('modalBody').textContent    = cfg.body;
+    document.getElementById('modalActions').innerHTML   = cfg.actions.map(a =>
+      `<button class="btn btn-${a.style}" onclick="${a.fn}">${a.label}</button>`
+    ).join('');
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function closeModalOutside(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  }
+
+  function switchCat(cat) {
+    state.category = cat;
+    const catIcons = { 'Pokémon':'🎴', 'WWE':'🏆', 'NFL':'🏈', 'Other':'📦' };
+    const icon = catIcons[cat] || '📦';
+    document.getElementById('currentCatBadge').textContent = `${icon} ${cat}`;
+    showToast(`Switched to ${cat}`);
+    closeModal();
+  }
+
+  function doSkip() {
+    state.currentPhotos = [];
+    resetCardForm();
+    showToast('Card skipped');
+  }
+
+  /* ═══════════════════════════════════════
+     TOAST
+  ═══════════════════════════════════════ */
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ═══════════════════════════════════════
+     INIT — auto-suggest session name on load
+  ═══════════════════════════════════════ */
+  (function init() {
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    document.getElementById('sessionName').placeholder = `e.g. ${today} – Pokémon Bulk`;
+    // Init dots
+    renderPhotoZone();
+  })();
+</script>
+
+</body>
+</html>
