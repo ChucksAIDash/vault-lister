@@ -1632,25 +1632,35 @@
   }
 
   function buildPrompt(card) {
-    return `You are an expert trading card identifier. Analyze the provided card photo(s) and return ONLY a JSON object with these exact fields:
+    return `You are an expert trading card identifier helping an eBay seller catalog their inventory.
+
+Analyze the provided card photo(s) and return ONLY a JSON object with these exact fields:
 
 {
-  "name": "full card name",
-  "set": "set/series name",
-  "number": "card number e.g. 025/165",
-  "year": "year printed on card",
-  "variant": "e.g. Holo, Reverse Holo, Full Art, Rainbow Rare, or blank if standard",
+  "name": "full card name as printed on the card",
+  "set": "set/series name — if uncertain or unfamiliar, use your best guess and set confidence to medium",
+  "number": "card number exactly as printed e.g. 025/165 or 161/091",
+  "year": "year printed on the card — if not visible or uncertain leave blank",
+  "variant": "e.g. Holo, Reverse Holo, Full Art, Special Illustration Rare, Rainbow Rare, Hyper Rare, Green Refractor, or blank if standard",
   "graded": true or false,
   "grader": "PSA, BGS, CGC, or blank if raw",
-  "grade": "numeric grade e.g. 9.5, or blank if raw",
-  "condition": "for raw cards: Mint, Near Mint, Lightly Played, Moderately Played, Heavily Played",
-  "suggestedPrice": numeric dollar amount as a number (no $ sign) based on typical market value,
-  "confidence": "high", "medium", or "low",
-  "confidenceNote": "brief note if medium or low — what was unclear",
+  "grade": "numeric grade e.g. 9, 9.5, 10 — or blank if raw",
+  "condition": "for raw cards only: Mint, Near Mint, Lightly Played, Moderately Played, Heavily Played",
+  "suggestedPrice": null if set is unfamiliar or card was released recently — otherwise a numeric dollar amount with no $ sign,
+  "confidence": "high" if you are certain of name, set, and number — "medium" if set or year is uncertain — "low" if card is largely unrecognizable,
+  "confidenceNote": "brief note explaining uncertainty — e.g. Set looks unfamiliar, possibly a recent release — verify set name and year. Leave blank if high confidence.",
   "category": "${card.category}"
 }
 
-${card.notes ? `Seller notes: ${card.notes}` : ''}
+IMPORTANT RULES:
+- NEVER call a card fake or counterfeit based on appearance alone. If a card looks unusual it may simply be a newer art style, special variant, or recent release you are unfamiliar with.
+- If you do not recognize the set, set confidence to medium and note "Possibly a new or recent release — please verify set name" in confidenceNote. Do not guess a different set with high confidence.
+- If the year is not clearly visible on the card, leave it blank rather than guessing.
+- If the set is unfamiliar or the card appears to be from a recent release, set suggestedPrice to null rather than guessing a price.
+- The card name is usually the most reliable field — prioritize getting that correct even if set details are uncertain.
+- For graded cards in slabs, read the label carefully for grader, grade, and card details.
+
+${card.notes ? `Seller notes provided: ${card.notes}` : ''}
 
 Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
   }
