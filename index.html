@@ -989,6 +989,91 @@
     }
     .result-price-input:focus { border-color: var(--accent); }
 
+    /* ── EBAY COMPS PANEL ── */
+    .ebay-comps-panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: .75rem 1rem;
+      margin: 0 1rem .75rem;
+    }
+    .ebay-comps-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .5rem;
+    }
+    .ebay-comps-title {
+      font-family: var(--ff-head);
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .ebay-comps-count {
+      font-size: .7rem;
+      color: var(--text-muted);
+    }
+    .ebay-price-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+      margin-bottom: .5rem;
+    }
+    .ebay-price-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .5rem .75rem;
+      text-align: center;
+    }
+    .ebay-price-val {
+      font-family: var(--ff-head);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: .15rem;
+    }
+    .ebay-price-lbl {
+      font-size: .64rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .ebay-thin-market {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      background: var(--warn-bg);
+      border: 1px solid rgba(255,179,64,.3);
+      border-radius: 6px;
+      padding: .4rem .7rem;
+      font-size: .75rem;
+      color: #b87a00;
+      margin-top: .5rem;
+    }
+    .ebay-correction-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: .4rem;
+      background: rgba(0,196,140,.08);
+      border: 1px solid rgba(0,196,140,.25);
+      border-radius: 6px;
+      padding: .5rem .75rem;
+      font-size: .75rem;
+      color: #00875f;
+      margin-top: .5rem;
+      line-height: 1.5;
+    }
+    .ebay-error-note {
+      font-size: .75rem;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: .25rem 0;
+    }
+
     .results-actions {
       padding: 1rem 0 2rem;
       display: flex;
@@ -1212,7 +1297,7 @@
   <div class="screen" id="screenResults">
     <div class="results-header">
       <h2 class="screen-title">Review Results</h2>
-      <p class="screen-subtitle">Claude's identifications — edit anything before pushing to eBay.</p>
+      <p class="screen-subtitle">Claude's identifications + eBay sold comps — edit anything before pushing.</p>
       <div class="results-summary-bar" id="resultsSummaryBar"></div>
     </div>
 
@@ -1667,15 +1752,19 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
 
   /* ─── Build Results Screen ─── */
   function buildResultsScreen() {
-    const ok      = state.results.filter(r => !r.error && r.confidence === 'high').length;
-    const flagged = state.results.filter(r => !r.error && r.confidence !== 'high').length;
-    const errors  = state.results.filter(r => r.error).length;
+    const ok        = state.results.filter(r => !r.error && r.confidence === 'high').length;
+    const flagged   = state.results.filter(r => !r.error && r.confidence !== 'high').length;
+    const errors    = state.results.filter(r => r.error).length;
+    const corrected = state.results.filter(r => r.ebayComps?.setCorrected || r.ebayComps?.yearCorrected).length;
+    const thin      = state.results.filter(r => r.ebayComps?.thinMarket).length;
 
     // Summary badges
     document.getElementById('resultsSummaryBar').innerHTML = `
-      ${ok      > 0 ? `<span class="results-badge success">✅ ${ok} identified</span>` : ''}
-      ${flagged > 0 ? `<span class="results-badge warn">⚠️ ${flagged} flagged</span>` : ''}
-      ${errors  > 0 ? `<span class="results-badge error">❌ ${errors} failed</span>` : ''}
+      ${ok        > 0 ? `<span class="results-badge success">✅ ${ok} identified</span>` : ''}
+      ${flagged   > 0 ? `<span class="results-badge warn">⚠️ ${flagged} flagged</span>` : ''}
+      ${errors    > 0 ? `<span class="results-badge error">❌ ${errors} failed</span>` : ''}
+      ${corrected > 0 ? `<span class="results-badge success">🔄 ${corrected} set/year corrected</span>` : ''}
+      ${thin      > 0 ? `<span class="results-badge warn">📊 ${thin} thin market</span>` : ''}
     `;
 
     // Cards
@@ -1701,7 +1790,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
         </div>`;
     }
 
-    const flagClass = r.confidence === 'high' ? '' : r.confidence === 'medium' ? 'flagged' : 'flagged';
+    const flagClass = r.confidence === 'high' ? '' : 'flagged';
     const flagLabel = r.confidence === 'high'
       ? '<span class="result-flag ok">✅ High confidence</span>'
       : r.confidence === 'medium'
@@ -1728,6 +1817,70 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
            <input class="result-input" id="r${i}-condition" value="${esc(r.condition)}" placeholder="Near Mint" />
          </div>`;
 
+    // ── eBay comps panel ──
+    const ec = r.ebayComps;
+    let ebayPanel = '';
+    if (ec) {
+      if (ec.error && !ec.avgPrice) {
+        // eBay call failed
+        ebayPanel = `
+          <div class="ebay-comps-panel">
+            <div class="ebay-comps-header">
+              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
+            </div>
+            <p class="ebay-error-note">Could not fetch eBay data: ${esc(ec.error)}</p>
+          </div>`;
+      } else if (ec.count === 0) {
+        ebayPanel = `
+          <div class="ebay-comps-panel">
+            <div class="ebay-comps-header">
+              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
+              <span class="ebay-comps-count">0 sold listings found</span>
+            </div>
+            <div class="ebay-thin-market">⚠️ No recent sold listings — price manually before listing</div>
+          </div>`;
+      } else {
+        const avgDisplay    = ec.avgPrice    ? `$${ec.avgPrice.toFixed(2)}`    : '—';
+        const medianDisplay = ec.medianPrice ? `$${ec.medianPrice.toFixed(2)}` : '—';
+
+        const correctionBanner = (ec.setCorrected || ec.yearCorrected)
+          ? `<div class="ebay-correction-banner">🔄 ${
+              [ec.setCorrected ? `Set updated to "${esc(r.set)}"` : null,
+               ec.yearCorrected ? `Year updated to "${esc(r.year)}"` : null]
+              .filter(Boolean).join(' · ')
+            } via eBay comps — please verify</div>`
+          : '';
+
+        const thinBanner = ec.thinMarket
+          ? `<div class="ebay-thin-market">⚠️ Thin market — only ${ec.count} sold listing${ec.count!==1?'s':''} found. Verify price manually.</div>`
+          : '';
+
+        ebayPanel = `
+          <div class="ebay-comps-panel">
+            <div class="ebay-comps-header">
+              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
+              <span class="ebay-comps-count">${ec.count} sold listing${ec.count!==1?'s':''}</span>
+            </div>
+            <div class="ebay-price-row">
+              <div class="ebay-price-box">
+                <div class="ebay-price-val">${medianDisplay}</div>
+                <div class="ebay-price-lbl">Median Price</div>
+              </div>
+              <div class="ebay-price-box">
+                <div class="ebay-price-val">${avgDisplay}</div>
+                <div class="ebay-price-lbl">Avg (trimmed)</div>
+              </div>
+            </div>
+            ${thinBanner}
+            ${correctionBanner}
+          </div>`;
+      }
+    }
+
+    // Price footer: show eBay median as the listing price, label clearly
+    const priceSource = ec?.medianPrice ? 'eBay Median Price' : 'Listing Price';
+    const priceVal    = r.suggestedPrice || '';
+
     return `
       <div class="result-card ${flagClass}" id="result-card-${i}">
         <div class="result-card-header">
@@ -1735,9 +1888,10 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           ${flagLabel}
         </div>
         ${thumbs ? `<div class="result-card-thumb-row">${thumbs}</div>` : ''}
+        ${ebayPanel}
         <div class="result-card-body">
           <div class="result-confidence">
-            <span class="confidence-label">Confidence</span>
+            <span class="confidence-label">Claude Confidence</span>
             <div class="confidence-bar"><div class="confidence-fill ${confClass}" style="width:${confPct}%"></div></div>
             <span class="confidence-label">${confPct}%</span>
           </div>
@@ -1748,7 +1902,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           </div>
           <div class="result-fields-grid">
             <div class="result-field">
-              <span class="result-field-label">Set</span>
+              <span class="result-field-label">Set ${ec?.setCorrected ? '✏️' : ''}</span>
               <input class="result-input" id="r${i}-set" value="${esc(r.set)}" placeholder="Set name" />
             </div>
             <div class="result-field">
@@ -1758,7 +1912,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           </div>
           <div class="result-fields-grid">
             <div class="result-field">
-              <span class="result-field-label">Year</span>
+              <span class="result-field-label">Year ${ec?.yearCorrected ? '✏️' : ''}</span>
               <input class="result-input" id="r${i}-year" value="${esc(r.year)}" placeholder="2024" />
             </div>
             <div class="result-field">
@@ -1769,10 +1923,10 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           ${gradeRow}
         </div>
         <div class="result-card-footer">
-          <span class="result-price-label">Suggested Price</span>
+          <span class="result-price-label">${priceSource}</span>
           <div style="display:flex;align-items:center;gap:.4rem;">
             <span style="font-size:.85rem;color:var(--text-muted);">$</span>
-            <input class="result-price-input" id="r${i}-price" value="${r.suggestedPrice || ''}" placeholder="0.00" type="number" step="0.01" min="0" />
+            <input class="result-price-input" id="r${i}-price" value="${priceVal}" placeholder="0.00" type="number" step="0.01" min="0" />
           </div>
         </div>
       </div>`;
