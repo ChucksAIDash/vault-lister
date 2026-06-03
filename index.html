@@ -1822,14 +1822,14 @@ Return ONLY a JSON object with these exact fields:
   "grader": "PSA, BGS, CGC, SGC, or blank if raw",
   "grade": "numeric grade e.g. 9, 9.5, 10 — or blank if raw",
   "condition": "for raw cards only: Mint, Near Mint, Lightly Played, Moderately Played, Heavily Played",
-  "suggestedPrice": null,
+  "suggestedPrice": your best estimate of the current eBay sold price as a number with no $ sign — based on recent market knowledge for this exact card, set, variant, and condition. If graded, factor in the grade. If you have no reliable price data for this specific card, use null,
   "confidence": "high" if certain of name AND set AND number — "medium" if set or number uncertain — "low" if card largely unrecognizable,
   "confidenceNote": "only fill if confidence is medium or low — explain what is uncertain and what to verify. Leave blank if high.",
   "category": "${card.category}"
 }
 
 CRITICAL RULES:
-- suggestedPrice is always null — pricing is handled separately.
+- If you have no reliable price data for a specific card, set suggestedPrice to null rather than guessing wildly.
 - Match the set to the reference list above using the card number total (e.g. /180 = Prismatic Evolutions, /252 = Surging Sparks, /175 = Stellar Crown, /099 = Shrouded Fable).
 - If the card number total does not match any known set, set confidence to medium and note the card number total in confidenceNote so the seller can look it up.
 - NEVER call a card fake or counterfeit — unusual art styles are often newer variants.
@@ -1945,10 +1945,12 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           ${gradeRow}
         </div>
         <div class="result-card-footer">
-          <span class="result-price-label">Your Price</span>
+          <span class="result-price-label">
+            ${r.suggestedPrice ? '🤖 AI Est. — verify before listing' : 'Your Price'}
+          </span>
           <div style="display:flex;align-items:center;gap:.4rem;">
             <span style="font-size:.85rem;color:var(--text-muted);">$</span>
-            <input class="result-price-input" id="r${i}-price" value="" placeholder="0.00" type="number" step="0.01" min="0" />
+            <input class="result-price-input" id="r${i}-price" value="${r.suggestedPrice || ''}" placeholder="0.00" type="number" step="0.01" min="0" />
           </div>
         </div>
       </div>`;
