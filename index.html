@@ -1297,7 +1297,7 @@
   <div class="screen" id="screenResults">
     <div class="results-header">
       <h2 class="screen-title">Review Results</h2>
-      <p class="screen-subtitle">Claude's identifications + eBay sold comps — edit anything before pushing.</p>
+      <p class="screen-subtitle">Review Claude's identifications — edit anything before pushing to eBay.</p>
       <div class="results-summary-bar" id="resultsSummaryBar"></div>
     </div>
 
@@ -1717,54 +1717,141 @@
   }
 
   function buildPrompt(card) {
-    return `You are an expert trading card identifier helping an eBay seller catalog their inventory.
+    const pokemonSetList = `
+POKÉMON TCG — COMPLETE SCARLET & VIOLET ERA SET LIST (use these exact names):
+  Scarlet & Violet (SVI) — March 2023
+  Paldea Evolved (PAL) — June 2023
+  Obsidian Flames (OBF) — August 2023
+  Scarlet & Violet 151 (MEW) — September 2023 [also called "Pokemon 151"]
+  Paradox Rift (PAR) — November 2023
+  Paldean Fates (PAF) — January 2024 [special set, shiny cards]
+  Temporal Forces (TEF) — March 2024
+  Twilight Masquerade (TWM) — May 2024
+  Shrouded Fable (SFA) — August 2024 [special set]
+  Stellar Crown (SCR) — September 2024
+  Surging Sparks (SSP) — November 2024
+  Prismatic Evolutions (PRE) — January 2025 [special set, Eevee-focused]
+  Journey Together (JTG) — March 2025
+  Destined Rivals (DRI) — May 2025
+  Black Bolt (BLK) — July 2025
+  White Flare (WHT) — July 2025
+  Mega Evolution (MEG) — September 2025
 
-Analyze the provided card photo(s) and return ONLY a JSON object with these exact fields:
+SWORD & SHIELD ERA (still commonly sold):
+  Brilliant Stars (BRS) — February 2022
+  Astral Radiance (ASR) — May 2022
+  Pokemon GO (PGO) — July 2022
+  Lost Origin (LOR) — September 2022
+  Silver Tempest (SIT) — November 2022
+  Crown Zenith (CRZ) — January 2023
+
+SET IDENTIFICATION TIPS:
+  - Umbreon ex cards appear in: Paldean Fates, Prismatic Evolutions, Scarlet & Violet base, and Temporal Forces
+  - The set symbol is printed on the card — match it to the list above
+  - Copyright year on the bottom of the card is usually 1-2 years before the set release
+  - Card numbers: SVI 001-258, PAL 001-279, OBF 001-230, MEW 001-207, PAR 001-266, PAF 001-245, TEF 001-218, TWM 001-226, SFA 001-099, SCR 001-175, SSP 001-252, PRE 001-180`;
+
+    const wwwSetList = `
+WWE TRADING CARDS — RECENT SET LIST (2023-2025):
+  Panini sets (2023-2024, now expired license):
+    2023 Panini Prizm WWE
+    2023 Panini Select WWE
+    2023 Panini Revolution WWE
+    2023 Panini Chronicles WWE
+    2023 Panini Immaculate WWE
+    2023 Donruss Elite WWE
+    2024 Panini Prizm WWE
+    2024 Panini Select WWE
+    2024 Panini PhotoGenic WWE
+    2024 Panini Three Count WWE
+    2024 Panini National Treasures WWE
+    2024 Panini Flawless WWE (released Jan 2025)
+
+  Topps/Fanatics sets (2025, new license holder):
+    2025 Topps Chrome WWE
+    2025 Topps Finest WWE
+    2025 Topps Universe WWE
+    2025 Topps Royalty WWE
+    2025 Topps WWE x Bape
+    2025 Topps Chrome Cactus Jack WWE (Travis Scott collaboration)
+    2025 Topps Chrome Sapphire WWE
+    2025 Topps Exalted WWE (released April 2026)
+
+  IMPORTANT: Fanatics/Topps took over the WWE license from Panini in 2025.
+  If a card has Topps branding it is 2025 or later.
+  If a card has Panini branding it is 2024 or earlier.`;
+
+    const nflSetList = `
+NFL FOOTBALL CARDS — RECENT SET LIST (2023-2025):
+  2023: Panini Prizm, Panini Mosaic, Panini Optic, Panini Donruss, Panini Select,
+        Panini Absolute, Panini Contenders, Panini Phoenix, Panini Revolution,
+        Panini Spectra, Panini National Treasures, Panini Flawless
+  2024: Panini Prizm, Panini Mosaic, Panini Optic, Panini Donruss, Panini Select,
+        Panini Absolute, Panini Contenders, Panini Phoenix, Panini Revolution,
+        Panini Spectra, Panini National Treasures, Panini Immaculate,
+        Topps Cosmic Chrome Football
+  2025: Panini Prizm, Panini Donruss, Panini Absolute, Panini Revolution,
+        Panini Stars & Stripes`;
+
+    const categorySetList = card.category === 'Pokémon' ? pokemonSetList
+      : card.category === 'WWE' ? wwwSetList
+      : card.category === 'NFL' ? nflSetList
+      : '';
+
+    return `You are an expert trading card identifier helping an eBay seller catalog their inventory.
+You have deep knowledge of trading card sets. Use the set reference list below to identify the correct set.
+
+${categorySetList}
+
+Analyze the provided card photo(s) carefully. Look for:
+1. The card name (printed on the card)
+2. The set symbol (small icon, usually bottom right of the artwork or near the card number)
+3. The card number (e.g. 025/165 — the total after the slash helps identify the set)
+4. Copyright year (bottom of card — note this is typically 1-2 years before set release)
+5. Any grading slab label if present
+
+Return ONLY a JSON object with these exact fields:
 
 {
-  "name": "full card name as printed on the card",
-  "set": "set/series name — if uncertain or unfamiliar, use your best guess and set confidence to medium",
+  "name": "full card name exactly as printed",
+  "set": "set name — must match one of the sets listed above if it is a known set",
   "number": "card number exactly as printed e.g. 025/165 or 161/091",
-  "year": "year printed on the card — if not visible or uncertain leave blank",
-  "variant": "e.g. Holo, Reverse Holo, Full Art, Special Illustration Rare, Rainbow Rare, Hyper Rare, Green Refractor, or blank if standard",
+  "year": "copyright year printed on card bottom — leave blank if not visible",
+  "variant": "e.g. Holo, Reverse Holo, Full Art, Special Illustration Rare, Illustration Rare, Rainbow Rare, Hyper Rare, Shiny Rare, Tera, or blank if standard",
   "graded": true or false,
-  "grader": "PSA, BGS, CGC, or blank if raw",
+  "grader": "PSA, BGS, CGC, SGC, or blank if raw",
   "grade": "numeric grade e.g. 9, 9.5, 10 — or blank if raw",
   "condition": "for raw cards only: Mint, Near Mint, Lightly Played, Moderately Played, Heavily Played",
-  "suggestedPrice": null if set is unfamiliar or card was released recently — otherwise a numeric dollar amount with no $ sign,
-  "confidence": "high" if you are certain of name, set, and number — "medium" if set or year is uncertain — "low" if card is largely unrecognizable,
-  "confidenceNote": "brief note explaining uncertainty — e.g. Set looks unfamiliar, possibly a recent release — verify set name and year. Leave blank if high confidence.",
+  "suggestedPrice": null,
+  "confidence": "high" if certain of name AND set AND number — "medium" if set or number uncertain — "low" if card largely unrecognizable,
+  "confidenceNote": "only fill if confidence is medium or low — explain what is uncertain and what to verify. Leave blank if high.",
   "category": "${card.category}"
 }
 
-IMPORTANT RULES:
-- NEVER call a card fake or counterfeit based on appearance alone. If a card looks unusual it may simply be a newer art style, special variant, or recent release you are unfamiliar with.
-- If you do not recognize the set, set confidence to medium and note "Possibly a new or recent release — please verify set name" in confidenceNote. Do not guess a different set with high confidence.
-- If the year is not clearly visible on the card, leave it blank rather than guessing.
-- If the set is unfamiliar or the card appears to be from a recent release, set suggestedPrice to null rather than guessing a price.
-- The card name is usually the most reliable field — prioritize getting that correct even if set details are uncertain.
-- For graded cards in slabs, read the label carefully for grader, grade, and card details.
+CRITICAL RULES:
+- suggestedPrice is always null — pricing is handled separately.
+- Match the set to the reference list above using the card number total (e.g. /180 = Prismatic Evolutions, /252 = Surging Sparks, /175 = Stellar Crown, /099 = Shrouded Fable).
+- If the card number total does not match any known set, set confidence to medium and note the card number total in confidenceNote so the seller can look it up.
+- NEVER call a card fake or counterfeit — unusual art styles are often newer variants.
+- For graded slabs, read the label text carefully for all details.
+- The card name is the most reliable field — prioritize getting that right above all else.
+- Do not leave "set" blank — make your best match from the list or state "Unknown — see card number" if truly unrecognizable.
 
-${card.notes ? `Seller notes provided: ${card.notes}` : ''}
+${card.notes ? `Seller notes: ${card.notes}` : ''}
 
 Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
   }
 
   /* ─── Build Results Screen ─── */
   function buildResultsScreen() {
-    const ok        = state.results.filter(r => !r.error && r.confidence === 'high').length;
-    const flagged   = state.results.filter(r => !r.error && r.confidence !== 'high').length;
-    const errors    = state.results.filter(r => r.error).length;
-    const corrected = state.results.filter(r => r.ebayComps?.setCorrected || r.ebayComps?.yearCorrected).length;
-    const thin      = state.results.filter(r => r.ebayComps?.thinMarket).length;
+    const ok      = state.results.filter(r => !r.error && r.confidence === 'high').length;
+    const flagged = state.results.filter(r => !r.error && r.confidence !== 'high').length;
+    const errors  = state.results.filter(r => r.error).length;
 
-    // Summary badges
     document.getElementById('resultsSummaryBar').innerHTML = `
-      ${ok        > 0 ? `<span class="results-badge success">✅ ${ok} identified</span>` : ''}
-      ${flagged   > 0 ? `<span class="results-badge warn">⚠️ ${flagged} flagged</span>` : ''}
-      ${errors    > 0 ? `<span class="results-badge error">❌ ${errors} failed</span>` : ''}
-      ${corrected > 0 ? `<span class="results-badge success">🔄 ${corrected} set/year corrected</span>` : ''}
-      ${thin      > 0 ? `<span class="results-badge warn">📊 ${thin} thin market</span>` : ''}
+      ${ok      > 0 ? `<span class="results-badge success">✅ ${ok} identified</span>` : ''}
+      ${flagged > 0 ? `<span class="results-badge warn">⚠️ ${flagged} needs review</span>` : ''}
+      ${errors  > 0 ? `<span class="results-badge error">❌ ${errors} failed</span>` : ''}
     `;
 
     // Cards
@@ -1794,7 +1881,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
     const flagLabel = r.confidence === 'high'
       ? '<span class="result-flag ok">✅ High confidence</span>'
       : r.confidence === 'medium'
-        ? '<span class="result-flag warn">⚠️ Review suggested</span>'
+        ? '<span class="result-flag warn">⚠️ Review set/number</span>'
         : '<span class="result-flag warn">⚠️ Low confidence</span>';
 
     const confPct   = r.confidence === 'high' ? 95 : r.confidence === 'medium' ? 60 : 30;
@@ -1817,70 +1904,6 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
            <input class="result-input" id="r${i}-condition" value="${esc(r.condition)}" placeholder="Near Mint" />
          </div>`;
 
-    // ── eBay comps panel ──
-    const ec = r.ebayComps;
-    let ebayPanel = '';
-    if (ec) {
-      if (ec.error && !ec.avgPrice) {
-        // eBay call failed
-        ebayPanel = `
-          <div class="ebay-comps-panel">
-            <div class="ebay-comps-header">
-              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
-            </div>
-            <p class="ebay-error-note">Could not fetch eBay data: ${esc(ec.error)}</p>
-          </div>`;
-      } else if (ec.count === 0) {
-        ebayPanel = `
-          <div class="ebay-comps-panel">
-            <div class="ebay-comps-header">
-              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
-              <span class="ebay-comps-count">0 sold listings found</span>
-            </div>
-            <div class="ebay-thin-market">⚠️ No recent sold listings — price manually before listing</div>
-          </div>`;
-      } else {
-        const avgDisplay    = ec.avgPrice    ? `$${ec.avgPrice.toFixed(2)}`    : '—';
-        const medianDisplay = ec.medianPrice ? `$${ec.medianPrice.toFixed(2)}` : '—';
-
-        const correctionBanner = (ec.setCorrected || ec.yearCorrected)
-          ? `<div class="ebay-correction-banner">🔄 ${
-              [ec.setCorrected ? `Set updated to "${esc(r.set)}"` : null,
-               ec.yearCorrected ? `Year updated to "${esc(r.year)}"` : null]
-              .filter(Boolean).join(' · ')
-            } via eBay comps — please verify</div>`
-          : '';
-
-        const thinBanner = ec.thinMarket
-          ? `<div class="ebay-thin-market">⚠️ Thin market — only ${ec.count} sold listing${ec.count!==1?'s':''} found. Verify price manually.</div>`
-          : '';
-
-        ebayPanel = `
-          <div class="ebay-comps-panel">
-            <div class="ebay-comps-header">
-              <span class="ebay-comps-title">📊 eBay Sold Comps</span>
-              <span class="ebay-comps-count">${ec.count} sold listing${ec.count!==1?'s':''}</span>
-            </div>
-            <div class="ebay-price-row">
-              <div class="ebay-price-box">
-                <div class="ebay-price-val">${medianDisplay}</div>
-                <div class="ebay-price-lbl">Median Price</div>
-              </div>
-              <div class="ebay-price-box">
-                <div class="ebay-price-val">${avgDisplay}</div>
-                <div class="ebay-price-lbl">Avg (trimmed)</div>
-              </div>
-            </div>
-            ${thinBanner}
-            ${correctionBanner}
-          </div>`;
-      }
-    }
-
-    // Price footer: show eBay median as the listing price, label clearly
-    const priceSource = ec?.medianPrice ? 'eBay Median Price' : 'Listing Price';
-    const priceVal    = r.suggestedPrice || '';
-
     return `
       <div class="result-card ${flagClass}" id="result-card-${i}">
         <div class="result-card-header">
@@ -1888,10 +1911,9 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           ${flagLabel}
         </div>
         ${thumbs ? `<div class="result-card-thumb-row">${thumbs}</div>` : ''}
-        ${ebayPanel}
         <div class="result-card-body">
           <div class="result-confidence">
-            <span class="confidence-label">Claude Confidence</span>
+            <span class="confidence-label">Confidence</span>
             <div class="confidence-bar"><div class="confidence-fill ${confClass}" style="width:${confPct}%"></div></div>
             <span class="confidence-label">${confPct}%</span>
           </div>
@@ -1902,7 +1924,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           </div>
           <div class="result-fields-grid">
             <div class="result-field">
-              <span class="result-field-label">Set ${ec?.setCorrected ? '✏️' : ''}</span>
+              <span class="result-field-label">Set</span>
               <input class="result-input" id="r${i}-set" value="${esc(r.set)}" placeholder="Set name" />
             </div>
             <div class="result-field">
@@ -1912,7 +1934,7 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           </div>
           <div class="result-fields-grid">
             <div class="result-field">
-              <span class="result-field-label">Year ${ec?.yearCorrected ? '✏️' : ''}</span>
+              <span class="result-field-label">Year</span>
               <input class="result-input" id="r${i}-year" value="${esc(r.year)}" placeholder="2024" />
             </div>
             <div class="result-field">
@@ -1923,10 +1945,10 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
           ${gradeRow}
         </div>
         <div class="result-card-footer">
-          <span class="result-price-label">${priceSource}</span>
+          <span class="result-price-label">Your Price</span>
           <div style="display:flex;align-items:center;gap:.4rem;">
             <span style="font-size:.85rem;color:var(--text-muted);">$</span>
-            <input class="result-price-input" id="r${i}-price" value="${priceVal}" placeholder="0.00" type="number" step="0.01" min="0" />
+            <input class="result-price-input" id="r${i}-price" value="" placeholder="0.00" type="number" step="0.01" min="0" />
           </div>
         </div>
       </div>`;
