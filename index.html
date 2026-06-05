@@ -1085,6 +1085,92 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+
+    /* ── PUSH SCREEN ── */
+    .push-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .push-spinner {
+      width: 52px; height: 52px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    .push-complete-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, rgba(0,196,140,.15), rgba(0,196,140,.05));
+      border: 2px solid rgba(0,196,140,.4);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin: 0 auto 1rem;
+    }
+    .push-title {
+      font-family: var(--ff-head);
+      font-size: 1.3rem; font-weight: 800;
+      margin-bottom: .3rem;
+    }
+    .push-sub {
+      font-size: .85rem; color: var(--text-muted);
+    }
+    .push-card-list {
+      display: flex; flex-direction: column; gap: .5rem;
+      overflow-y: auto; max-height: 50vh;
+      margin-bottom: 1.25rem;
+    }
+    .push-card-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: .75rem 1rem;
+      display: flex; align-items: flex-start; gap: .75rem;
+      box-shadow: var(--shadow-sm);
+      transition: border-color .2s;
+    }
+    .push-card-item.active  { border-color: var(--accent-bdr); background: var(--accent-bg); }
+    .push-card-item.done    { border-color: rgba(0,196,140,.35); background: rgba(0,196,140,.04); }
+    .push-card-item.failed  { border-color: rgba(255,77,106,.35); background: var(--danger-bg); }
+    .push-status-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; margin-top: 1px; }
+    .push-card-info { flex: 1; min-width: 0; }
+    .push-card-num {
+      font-family: var(--ff-head); font-size: .73rem; font-weight: 700;
+      color: var(--text-muted); margin-bottom: .15rem;
+    }
+    .push-card-title {
+      font-size: .82rem; color: var(--text-mid);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: .1rem;
+    }
+    .push-card-status { font-size: .75rem; color: var(--text-muted); }
+    .push-card-link {
+      font-size: .72rem; font-weight: 600;
+      color: var(--accent-dk);
+      text-decoration: underline;
+      text-decoration-color: rgba(0,170,207,.3);
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .push-card-link:hover { text-decoration-color: var(--accent-dk); }
+    .push-summary-bar {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .75rem; margin-bottom: 1.25rem;
+    }
+    .push-summary-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 1rem;
+      text-align: center; box-shadow: var(--shadow-sm);
+    }
+    .push-summary-num {
+      font-family: var(--ff-head); font-size: 1.6rem; font-weight: 800;
+      line-height: 1; margin-bottom: .2rem;
+    }
+    .push-summary-num.ok     { color: var(--success); }
+    .push-summary-num.failed { color: var(--danger); }
+    .push-summary-lbl { font-size: .72rem; color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -1304,8 +1390,8 @@
     <div id="resultsCardList"></div>
 
     <div class="results-actions">
-      <button class="btn btn-primary" onclick="pushToEbay()">
-        Push to eBay Drafts →
+      <button class="btn btn-primary" id="pushBtn" onclick="pushToEbay()">
+        🚀 Push to eBay Drafts →
       </button>
       <button class="btn btn-secondary" onclick="reprocessFlagged()">
         🔄 Re-analyze Flagged Cards
@@ -1314,6 +1400,49 @@
         + Start New Session
       </button>
     </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 6 — PUSH TO EBAY
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="screenPush">
+
+    <div class="push-header" id="pushHeader">
+      <div class="push-spinner" id="pushSpinner"></div>
+      <div class="push-title" id="pushTitle">Pushing to eBay…</div>
+      <div class="push-sub" id="pushSub">Creating draft listings</div>
+    </div>
+
+    <div class="progress-bar-wrap" id="pushProgressWrap">
+      <div class="progress-bar-fill" id="pushProgressFill"></div>
+    </div>
+
+    <div class="push-card-list" id="pushCardList"></div>
+
+    <div class="push-summary-bar" id="pushSummaryBar" style="display:none;">
+      <div class="push-summary-box">
+        <div class="push-summary-num ok" id="pushOkCount">0</div>
+        <div class="push-summary-lbl">Drafts Created</div>
+      </div>
+      <div class="push-summary-box">
+        <div class="push-summary-num failed" id="pushFailCount">0</div>
+        <div class="push-summary-lbl">Failed</div>
+      </div>
+    </div>
+
+    <div id="pushActions" style="display:none; flex-direction:column; gap:.6rem;">
+      <a
+        href="https://www.ebay.com/sh/lst/active"
+        target="_blank"
+        rel="noopener"
+        class="btn btn-primary"
+        style="text-decoration:none;"
+      >
+        Open Seller Hub →
+      </a>
+      <button class="btn btn-secondary" onclick="newSession()">+ Start New Session</button>
+    </div>
+
   </div>
 
 </div><!-- /#app -->
@@ -2001,11 +2130,168 @@ Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
     for (const { i } of flagged) await reprocessCard(i);
   }
 
-  function pushToEbay() {
-    // Phase 4 — placeholder for now
+  /* ═══════════════════════════════════════
+     PHASE 4 — Push to eBay Drafts
+  ═══════════════════════════════════════ */
+  async function pushToEbay() {
     const final = collectResults();
-    console.log('Final results ready for eBay:', final);
-    showToast('eBay integration coming in Phase 4 🚀');
+    const pushable = final.filter(r => !r.error);
+
+    if (pushable.length === 0) {
+      showToast('No valid cards to push');
+      return;
+    }
+
+    // Build push screen list
+    const listEl = document.getElementById('pushCardList');
+    listEl.innerHTML = pushable.map((r, i) => `
+      <div class="push-card-item" id="push-item-${i}">
+        <div class="push-status-icon" id="push-icon-${i}">⏳</div>
+        <div class="push-card-info">
+          <div class="push-card-num">Card #${r.cardIndex + 1} · ${CAT_ICONS[r.category]||'📦'} · ×${r.qty}</div>
+          <div class="push-card-title" id="push-title-${i}">${esc(r.name || 'Unknown Card')}</div>
+          <div class="push-card-status" id="push-status-${i}">Waiting…</div>
+        </div>
+      </div>`
+    ).join('');
+
+    document.getElementById('pushProgressFill').style.width = '0%';
+    document.getElementById('pushTitle').textContent = 'Pushing to eBay…';
+    document.getElementById('pushSub').textContent   = `0 of ${pushable.length} complete`;
+    document.getElementById('pushSpinner').style.display = 'block';
+    document.getElementById('pushProgressWrap').style.display = 'block';
+    document.getElementById('pushSummaryBar').style.display  = 'none';
+    document.getElementById('pushActions').style.display     = 'none';
+
+    // Restore push header to spinner state
+    const hdr = document.getElementById('pushHeader');
+    hdr.innerHTML = `
+      <div class="push-spinner" id="pushSpinner"></div>
+      <div class="push-title" id="pushTitle">Pushing to eBay…</div>
+      <div class="push-sub"   id="pushSub">0 of ${pushable.length} complete</div>
+    `;
+
+    showScreen('screenPush');
+
+    // Call worker /push endpoint with all cards
+    const cards = pushable.map(r => ({
+      name:           r.name,
+      year:           r.year,
+      set:            r.set,
+      number:         r.number,
+      variant:        r.variant,
+      graded:         r.graded,
+      grader:         r.grader,
+      grade:          r.grade,
+      condition:      r.condition,
+      category:       r.category,
+      qty:            r.qty,
+      suggestedPrice: r.suggestedPrice,
+    }));
+
+    let pushResults = [];
+
+    try {
+      // Show "Sending…" on first card
+      setPushItemState(0, 'active', '🔍', 'Sending to eBay…');
+
+      const response = await fetch(`${WORKER_URL}/push`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'push', cards }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        let errJson;
+        try { errJson = JSON.parse(errText); } catch { errJson = { error: errText }; }
+        throw new Error(errJson.error || `Worker error ${response.status}`);
+      }
+
+      const data = await response.json();
+      pushResults = data.results || [];
+
+    } catch (err) {
+      // Network/worker-level failure — mark all as failed
+      pushable.forEach((_, i) => {
+        setPushItemState(i, 'failed', '❌', `Error: ${err.message}`);
+      });
+      document.getElementById('pushHeader').innerHTML = `
+        <div style="font-size:2rem;text-align:center;margin-bottom:.5rem;">❌</div>
+        <div class="push-title">Push Failed</div>
+        <div class="push-sub">${esc(err.message)}</div>
+      `;
+      document.getElementById('pushProgressWrap').style.display = 'none';
+      document.getElementById('pushSummaryBar').style.display   = 'grid';
+      document.getElementById('pushOkCount').textContent        = '0';
+      document.getElementById('pushFailCount').textContent      = pushable.length;
+      document.getElementById('pushActions').style.display      = 'flex';
+      return;
+    }
+
+    // Animate results per card
+    let okCount = 0, failCount = 0;
+
+    for (let i = 0; i < pushable.length; i++) {
+      const res = pushResults.find(r => r.index === i);
+      const pct = Math.round(((i + 1) / pushable.length) * 100);
+      document.getElementById('pushProgressFill').style.width = pct + '%';
+      document.getElementById('pushSub').textContent = `${i + 1} of ${pushable.length} complete`;
+
+      if (!res) {
+        setPushItemState(i, 'failed', '❌', 'No response for this card');
+        failCount++;
+      } else if (res.success) {
+        setPushItemState(i, 'done', '✅', `$${res.price} · SKU: ${res.sku}`, res.sellerHubUrl);
+        okCount++;
+      } else {
+        setPushItemState(i, 'failed', '❌', res.error || 'Failed');
+        failCount++;
+      }
+
+      // Small delay so the user can see each card update
+      await new Promise(resolve => setTimeout(resolve, 180));
+    }
+
+    // Done state
+    document.getElementById('pushHeader').innerHTML = `
+      <div class="push-complete-icon">✅</div>
+      <div class="push-title">${okCount === pushable.length ? 'All Drafts Created!' : 'Push Complete'}</div>
+      <div class="push-sub">${okCount} draft${okCount!==1?'s':''} created · ${failCount} failed</div>
+    `;
+    document.getElementById('pushProgressWrap').style.display = 'none';
+    document.getElementById('pushSummaryBar').style.display   = 'grid';
+    document.getElementById('pushOkCount').textContent        = okCount;
+    document.getElementById('pushFailCount').textContent      = failCount;
+    document.getElementById('pushActions').style.display      = 'flex';
+
+    if (okCount > 0) {
+      showToast(`${okCount} draft${okCount!==1?'s':''} sent to eBay Seller Hub 🎉`);
+    }
+  }
+
+  function setPushItemState(i, cls, icon, status, linkUrl) {
+    const item = document.getElementById(`push-item-${i}`);
+    if (!item) return;
+    item.className = `push-card-item ${cls}`;
+    document.getElementById(`push-icon-${i}`).textContent   = icon;
+    document.getElementById(`push-status-${i}`).textContent = status;
+
+    // Add Seller Hub link if provided
+    if (linkUrl) {
+      const existing = item.querySelector('.push-card-link');
+      if (!existing) {
+        const link = document.createElement('a');
+        link.href      = linkUrl;
+        link.target    = '_blank';
+        link.rel       = 'noopener';
+        link.className = 'push-card-link';
+        link.textContent = 'View Draft →';
+        item.appendChild(link);
+      }
+    }
+
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function newSession() {
